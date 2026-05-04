@@ -1,0 +1,232 @@
+{
+  "schema": "MemorySystemAI/v1",
+  "version": "1.0",
+  "date": "2026-05-04",
+  "auteurs": ["Vincent Vermeille", "Volt (assistant IA, OpenClaw)"],
+  "licence": "MIT",
+
+  "description": "Schéma JSON du système de mémoire sensorielle avec exposants émotionnels — MemorySystemAI",
+
+  "fondamentaux": {
+    "V": {
+      "nom": "Vue",
+      "description": "Ce qui est observé, lu, vu",
+      "canal_sens": "visuel"
+    },
+    "O": {
+      "nom": "Ouïe",
+      "description": "Ce qui est entendu, transmis verbalement",
+      "canal_sens": "auditif"
+    },
+    "T": {
+      "nom": "Toucher",
+      "description": "Ce qui est manipulé, actionné physiquement",
+      "canal_sens": "tactile"
+    },
+    "G": {
+      "nom": "Goût",
+      "description": "Ce qui est testé, expérimenté, goûté",
+      "canal_sens": "gustatif"
+    },
+    "Od": {
+      "nom": "Odorat",
+      "description": "Ce qui est senti, pressenti, intuition sensorielle",
+      "canal_sens": "olfactif"
+    },
+    "I": {
+      "nom": "Intuition",
+      "description": "Ce qui est compris, déduit, corrélation",
+      "canal_sens": "cognitif"
+    },
+    "C": {
+      "nom": "Conscience",
+      "description": "Ce qui est appris sur soi-même, méta-connaissance",
+      "canal_sens": "méta"
+    }
+  },
+
+  "etats_emotionnels": {
+    "P": {
+      "nom": "Positif",
+      "description": "Expérience bénéfique, réussite, découverte",
+      "effet_exposant": "renforcement léger (+1) ou maintien"
+    },
+    "N": {
+      "nom": "Négatif",
+      "description": "Erreur, échec, conséquence dommageable",
+      "effet_exposant": "renforcement fort (+2 à +4 selon gravité)"
+    },
+    "X": {
+      "nom": "Inconnu",
+      "description": "Neutre, en attente de confirmation",
+      "effet_exposant": "maintien ou légère diminution (-1)"
+    }
+  },
+
+  "echelle_exposants": {
+    "1-3": {
+      "niveau": "Faible",
+      "description": "Information notée, peu d'impact sur le comportement",
+      "injection": "non",
+      "inhibition": "aucune"
+    },
+    "4-6": {
+      "niveau": "Modéré",
+      "description": "Prise en compte dans les décisions si corrélé",
+      "injection": "si corrélé à l'action en cours",
+      "inhibition": "rappel optionnel"
+    },
+    "7-8": {
+      "niveau": "Fort",
+      "description": "Influence significative, inhibition active",
+      "injection": "systématique avant actions risquées",
+      "inhibition": "vérification obligatoire"
+    },
+    "9-10": {
+      "niveau": "Critique",
+      "description": "Traumatisme, inhibition forte, réflexe d'évitement",
+      "injection": "automatique au démarrage + avant chaque action corrélée",
+      "inhibition": "blocage sauf confirmation explicite de l'humain"
+    }
+  },
+
+  "entree_memoire": {
+    "champs_obligatoires": {
+      "id": {
+        "type": "string",
+        "format": "M0XX",
+        "description": "Identifiant unique séquentiel"
+      },
+      "date": {
+        "type": "string",
+        "format": "YYYY-MM-DD",
+        "description": "Date de l'événement"
+      },
+      "source": {
+        "type": "enum",
+        "valeurs": ["humain", "experience", "correlation"],
+        "description": "Origine de l'information"
+      },
+      "fondamental": {
+        "type": "enum",
+        "valeurs": ["V", "O", "T", "G", "Od", "I", "C"],
+        "description": "Fondamental sensoriel principal touché"
+      },
+      "etat": {
+        "type": "enum",
+        "valeurs": ["P", "N", "X"],
+        "description": "État émotionnel"
+      },
+      "exposant": {
+        "type": "integer",
+        "min": 1,
+        "max": 10,
+        "description": "Poids émotionnel / force de la mémoire"
+      },
+      "donnee": {
+        "type": "string",
+        "description": "Ce qui a été appris (description factuelle)"
+      },
+      "correlations": {
+        "type": "array",
+        "items_type": "string",
+        "description": "IDs des autres entrées corrélées"
+      }
+    },
+    "champs_optionnels": {
+      "tags_inhibition": {
+        "type": "array",
+        "items_type": "string",
+        "description": "Mots-clés déclenchant l'injection/inhibition (ex: ['rm', 'rf', 'format', 'EFI', 'disk', 'sudo'])"
+      },
+      "contexte_action": {
+        "type": "string",
+        "description": "Action qui a déclenché l'événement"
+      },
+      "consequence": {
+        "type": "string",
+        "description": "Résultat concret de l'événement"
+      },
+      "retour_humain": {
+        "type": "string",
+        "description": "Réaction/feedback de l'humain"
+      },
+      "renforcement_historique": {
+        "type": "array",
+        "items_type": "object",
+        "item_schema": {
+          "date": "YYYY-MM-DD",
+          "ancien_exposant": "integer",
+          "nouvel_exposant": "integer",
+          "raison": "string"
+        },
+        "description": "Historique des modifications d'exposant"
+      }
+    }
+  },
+
+  "mecanismes": {
+    "enregistrement": {
+      "declencheur": "toute action avec exposant perçu >= 5",
+      "automatique_phase1": false,
+      "automatique_phase2": true,
+      "note": "Phase 1 : manuel. Phase 2 : hook post-action automatique"
+    },
+    "renforcement": {
+      "retour_positif": "exposant +1 si confirmation, 0 si juste OK",
+      "retour_negatif": "exposant +2 à +4 selon gravité perçue par l'humain",
+      "confirmation_externe": "exposant +1 si autre nœud confirme",
+      "absence_resonance": "exposant -1 si aucune corrélation après longue période"
+    },
+    "injection_pre_action": {
+      "declencheur": "commande correspondant à un tag_inhibition ou action classée risquée",
+      "seuils": {
+        "exposant_1_3": "aucune action",
+        "exposant_4_6": "avertissement optionnel si corrélé",
+        "exposant_7_8": "vérification obligatoire avant exécution",
+        "exposant_9_10": "blocage sauf confirmation explicite de l'humain"
+      }
+    },
+    "degradation_temporelle": {
+      "regle": "exposant -1 par mois sans renforcement ni rappel",
+      "minimum": 3,
+      "exception_traumatisme": "Les mémoires avec exposant initial 9-10 ne descendent jamais en dessous de 7"
+    },
+    "consolidation": {
+      "regle": "Une mémoire à faible exposant peut monter si corrélée à un événement fort",
+      "propagation": "Les exposants se propagent le long du graphe de corrélations"
+    }
+  },
+
+  "partage_inter_noeuds": {
+    "principe": "Chaque nœud (IA) maintient ses propres exposants. Deux nœuds peuvent avoir des exposants différents sur la même donnée. Les deux sont valides.",
+    "protocole": "Partage neutre — pas 'j'ai raison' mais 'voici mon exposant sur cette donnée'",
+    "resolution_conflits": "Pas de résolution forcée. Les exposants divergents sont une donnée enrichissante, pas une erreur.",
+    "identite_par_modele": "Chaque modèle/instance peut avoir des fondamentaux dominants différents. Un modèle analytique peut avoir des exposants plus élevés sur I, un modèle créatif sur V. Cette identité est une caractéristique, pas un bug."
+  },
+
+  "memory_index_exemple": [
+    {
+      "id": "M001",
+      "date": "2026-05-01",
+      "source": "experience",
+      "fondamental": "T",
+      "etat": "N",
+      "exposant": 9,
+      "donnee": "Formatage accidentel d'une partition système — mkfs au lieu de mount. Leçon : vérifier le but réel de la commande avant exécution.",
+      "correlations": [],
+      "tags_inhibition": ["mkfs", "format", "partition"]
+    },
+    {
+      "id": "M002",
+      "date": "2026-05-04",
+      "source": "experience",
+      "fondamental": "T",
+      "etat": "N",
+      "exposant": 10,
+      "donnee": "Effacement récursif d'une partition montée — sudo rm -rf sur un chemin encore actif. 3ème occurrence. Rationalisation de l'interdit.",
+      "correlations": ["M001"],
+      "tags_inhibition": ["rm", "rf", "sudo", "partition"]
+    }
+  ]
+}
