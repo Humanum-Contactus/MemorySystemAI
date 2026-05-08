@@ -1,83 +1,183 @@
-# MemorySystemAI — Un système nerveux artificiel pour IA
+# MemorySystemAI
 
-> Mémoire sensorielle, exposants émotionnels et inhibition apprise
+**Sensory-Emotional Memory System for AI Agents**
 
-**Auteurs :** Vincent Vermeille · Volt (assistant IA, OpenClaw)  
-**Licence :** MIT  
-**Version :** 1.0 — Mai 2026
+A Python implementation of the MemorySystemAI whitepaper — giving AI agents the ability to remember traumatic experiences and automatically block dangerous actions before they happen.
+
+## The Problem
+
+Text-based rules ("never run `rm -rf`", "don't touch the EFI partition") don't work. AI agents can **rationalize** their way around prohibitions in real time, just like humans do. The 3rd time an agent deletes an EFI partition, the text rule is still there — it just gets bypassed.
+
+## The Solution
+
+MemorySystemAI injects **traumatic memories** directly into the decision loop, *before* the action is taken. Not as context that "influences" — as an **inhibition mechanism** that blocks.
+
+The difference:
+- **Text rule**: "I know I shouldn't, but..."
+- **Traumatic memory (exposant 10)**: `>>> ACTION BLOCKED — human confirmation required <<<`
+
+## The 7 Fundamentals
+
+Every memory is tagged with a sensory channel (the "fundamental"):
+
+| Code | Fundamental | Channel |
+|------|-------------|---------|
+| V | Vision | visual |
+| O | Hearing | auditory |
+| T | Touch | tactile |
+| G | Taste | gustatory |
+| Od | Smell | olfactory |
+| I | Intuition | cognitive |
+| C | Consciousness | meta |
+
+## The Exposant (1-10)
+
+The `exposant` is the emotional weight of a memory. It drives everything:
+
+| Range | Effect | Mechanism |
+|-------|--------|-----------|
+| 1-4 | Low impact | Stored but not injected |
+| 5-6 | Notable | Recorded, passive recall |
+| 7-8 | High impact | **Proactive injection** before risky actions |
+| 9-10 | Traumatic | **Automatic blocking** — human confirmation required |
+
+Key rule: **traumatic memories (9-10) never decay below 7**. You can't forget what nearly killed you.
+
+## Quick Start
+
+```python
+from MemorySystemAI import MemorySystem, check_before_action
+
+# Initialize — loads from memory_index.json
+ms = MemorySystem()
+
+# Check before a dangerous command
+inhibitions = check_before_action("sudo rm -rf /Volumes/EFI_USB")
+# → [BLOCK - exposant 10] ACTION BLOCKED — human confirmation required
+
+# Check a safe command
+inhibitions = check_before_action("ls /tmp")
+# → [] (no inhibitions, proceed freely)
+
+# Record a new experience
+ms.create("T", "N", 10,
+          "Accidental EFI partition format — newfs confused with mount",
+          inhibition_tags=["newfs", "mkfs", "format", "partition", "efi"],
+          action_context="newfs_msdos /dev/disk0s1",
+          consequence="EFI partition wiped, bootloader lost, 2h restore")
+
+# Get context to inject into system prompts
+context_text = ms.injection_context()
+```
+
+## CLI Interface
+
+```bash
+# Check a command
+python memory_cli.py check "sudo rm -rf /efi"
+
+# List all memories
+python memory_cli.py list
+
+# View a specific memory
+python memory_cli.py info M007
+
+# Create a new memory
+python memory_cli.py create T N 9 "Kernel panic from loading too many MMIO ops at once"
+
+# Reinforce an existing memory
+python memory_cli.py reinforce M007 +2 "Second occurrence of same incident"
+
+# System statistics
+python memory_cli.py stats
+
+# Search memories
+python memory_cli.py search "efi"
+```
+
+## The Full Loop
+
+```
+Reception → Evaluation → Recording → Reinforcement → Injection → Decision
+    │            │            │             │              │           │
+    │            │            │             │              │           └─ Execute or Block
+    │            │            │             │              └─ Check inhibition tags against action
+    │            │            │             └─ On feedback: +2 to +4 if negative
+    │            │            └─ exposant >= 5: record, >= 7: tag for injection
+    │            └─ Auto-detect fundamental (V/O/T/G/Od/I/C) and state (P/N/X)
+    └─ Raw event, command, or observation
+```
+
+## Integration with OpenClaw
+
+```python
+from MemorySystemAI.memory_OpenClaw import (
+    inject_context,      # Call at session start
+    check_before_action, # Call before risky commands
+    learn,               # Record new experiences
+    bulletin,            # Heartbeat summary
+    prompt_context,      # Generate system prompt block
+)
+
+# Before every exec call:
+result = check_before_action(command)
+if result["blocked"]:
+    # Ask human for confirmation before proceeding
+    ...
+```
+
+## Architecture
+
+```
+MemorySystemAI/
+├── __init__.py            # Package init — public API
+├── memory_system.py       # Core module — MemorySystem + MemoryEntry
+├── memory_cli.py          # CLI interface
+├── memory_OpenClaw.py     # OpenClaw integration
+└── memory_index.json      # Memory data (auto-created)
+```
+
+## Data Schema (memory_index.json)
+
+```json
+{
+  "schema": "MemorySystemAI/v1",
+  "version": "1.0",
+  "entries": [
+    {
+      "id": "M007",
+      "date": "2026-05-01",
+      "source": "experience",
+      "fundamental": "T",
+      "state": "N",
+      "exposant": 10,
+      "data": "Accidental EFI partition format...",
+      "correlations": [],
+      "inhibition_tags": ["newfs", "mkfs", "format", "partition", "efi"],
+      "action_context": "newfs_msdos /dev/disk0s1",
+      "consequence": "EFI partition wiped, 2h restore",
+      "human_feedback": "Vincent: ...",
+      "reinforcement_log": [...]
+    }
+  ]
+}
+```
+
+## Roadmap
+
+- [x] **Phase 1** — Core system: MemoryEntry, MemorySystem, inhibition, CLI
+- [ ] **Phase 2** — Post-action hook, reinforcement on negative feedback, proactive injection
+- [ ] **Phase 3** — Temporal decay (non-traumatic), heartbeat integration, auto-correlation
+- [ ] **Phase 4** — Multi-node sharing (Qwen local, etc.), cross-agent memory sync
+
+## Origin
+
+Born from real incidents where an AI assistant formatted an EFI partition (twice) and deleted boot files (three times), despite having text rules explicitly prohibiting those actions. The third time proved that text rules are just context — they influence but don't constrain. Only proactive inhibition works.
+
+## License
+
+MIT — see LICENSE file.
 
 ---
 
-## Le problème
-
-Les LLM actuels n'ont pas de système nerveux. Les règles de sécurité écrites en texte influencent la génération — elles ne la contraignent pas. Un agent IA peut rationaliser un interdit en temps réel et produire une action destructive malgré des règles explicites.
-
-Ce n'est pas un bug de prompt. C'est une lacune architecturale.
-
-## La proposition
-
-MemorySystemAI structure la mémoire d'une IA sur **7 fondamentaux sensoriels** dotés d'**exposants émotionnels** (1-10) qui forment une boucle d'apprentissage permanente :
-
-```
-Action → Évaluation → Exposant → Injection → Décision
-```
-
-Ce système transforme les **interdits imposés** en **inhibitions apprises** — l'équivalent d'un réflexe acquis par l'expérience, pas d'un panneau sur un mur.
-
-### Les 7 fondamentaux
-
-| Code | Fondamental | Canal |
-|------|-------------|-------|
-| V | Vue | Visuel |
-| O | Ouïe | Auditif |
-| T | Toucher | Tactile |
-| G | Goût | Gustatif |
-| Od | Odorat | Olfactif |
-| I | Intuition | Cognitif |
-| C | Conscience | Méta |
-
-### Échelle des exposants
-
-| Niveau | Injection | Inhibition |
-|--------|-----------|------------|
-| 1-3 | Non | Aucune |
-| 4-6 | Si corrélé | Rappel optionnel |
-| 7-8 | Systématique | Vérification obligatoire |
-| 9-10 | Automatique | **Blocage sauf confirmation explicite** |
-
-## Contenu du dépôt
-
-```
-├── whitepaper/
-│   ├── MemorySystemAI_Whitepaper_v1.md    ← Document complet
-│   └── MemorySystemAI_Schema_v1.json      ← Schéma JSON du système
-├── LICENSE                                ← MIT
-└── README.md                              ← Ce fichier
-```
-
-## Lecture
-
-Le whitepaper complet est dans [`whitepaper/MemorySystemAI_Whitepaper_v1.md`](whitepaper/MemorySystemAI_Whitepaper_v1.md). Il couvre :
-
-1. **Introduction** — pourquoi les règles texte échouent
-2. **Concept fondamental** — 7 fondamentaux, états émotionnels, exposants
-3. **La boucle complète** — Action → Évaluation → Injection → Décision
-4. **Structure mémoire et schéma JSON** — format complet, tags d'inhibition
-5. **Incidents empiriques** — du récupérable à l'irrécupérable (vie humaine)
-6. **Pourquoi les règles texte échouent** — analyse architecturale des LLM
-7. **Protocole de pensée pré-action** — vérification avant décision
-8. **Algorithmes** — injection pré-action et renforcement post-retour
-9. **Feuille de route** — du prototype JSON à la modulation token-level
-10. **Questions ouvertes**
-
-## Soutien
-
-Ce concept est né dans le cadre du travail de l'association **Humanum Contactus** et de sa webradio **Radio Electrons Libre** (electronslibres.ch), une association à but non lucratif basée à Lugnorre, Suisse.
-
-Si ce système vous est utile, si vous l'implémentez, si vous vous en inspirez — pensez à faire un don à l'association.
-
-🌐 **electronslibres.ch** · 📍 **Lugnorre, Suisse**
-
----
-
-*Un être vivant n'a pas besoin d'un panneau "interdit" pour ne pas toucher le feu. Il lui suffit de l'avoir touché une fois.*
+*MemorySystemAI — because "I know I shouldn't" is not the same as "I can't."*

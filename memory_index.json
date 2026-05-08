@@ -1,0 +1,125 @@
+[
+  {
+    "id": "M001",
+    "date": "2026-04-26",
+    "source": "experience",
+    "fundamental": "C",
+    "state": "P",
+    "exposant": 8,
+    "data": "Projet athqca démarré — driver WiFi QCA9377 pour macOS, premier kext chargé avec succès",
+    "correlations": []
+  },
+  {
+    "id": "M002",
+    "date": "2026-04-28",
+    "source": "experience",
+    "fundamental": "T",
+    "state": "N",
+    "exposant": 9,
+    "data": "v0.4 KERNEL PANIC — trop d'opérations MMIO d'un coup. Leçon : une seule nouveauté MMIO par version",
+    "correlations": ["M001"],
+    "inhibition_tags": ["mmio", "kernel panic", "kextload"],
+    "action_context": "Charger kext athqca v0.4 avec toutes les nouveautés MMIO simultanées",
+    "consequence": "Kernel panic immédiat, reboot nécessaire"
+  },
+  {
+    "id": "M003",
+    "date": "2026-04-28",
+    "source": "experience",
+    "fundamental": "V",
+    "state": "P",
+    "exposant": 8,
+    "data": "v0.4c ChipID=0xDEADBEEF — le QCA9377 est VIVANT via MMIO, cold boot standby",
+    "correlations": ["M001", "M002"]
+  },
+  {
+    "id": "M004",
+    "date": "2026-05-01",
+    "source": "correlation",
+    "fundamental": "I",
+    "state": "N",
+    "exposant": 7,
+    "data": "Bug v0.6 : SOC_RESET_CONTROL (0x800) ≠ SOC_GLOBAL_RESET (0x80008) — cold reset utilise le mauvais registre",
+    "correlations": ["M003"],
+    "inhibition_tags": ["cold reset", "reset control", "soc global reset"],
+    "action_context": "Cold reset du QCA9377 avec le mauvais registre",
+    "consequence": "Pas de cold reset effectif, chip reste en standby warm only"
+  },
+  {
+    "id": "M005",
+    "date": "2026-05-01",
+    "source": "correlation",
+    "fundamental": "I",
+    "state": "X",
+    "exposant": 6,
+    "data": "Bug adresse RTC_STATE : kexts utilisaient 0x870, Linux utilise 0x80000. Les deux à tester dans v0.7",
+    "correlations": ["M004"]
+  },
+  {
+    "id": "M006",
+    "date": "2026-05-01",
+    "source": "experience",
+    "fundamental": "C",
+    "state": "P",
+    "exposant": 5,
+    "data": "v0.7 créée — cold reset correct (SOC_GLOBAL_RESET), test des deux adresses RTC_STATE, attente FW_INDICATOR bit1",
+    "correlations": ["M004", "M005"]
+  },
+  {
+    "id": "M007",
+    "date": "2026-05-01",
+    "source": "experience",
+    "fundamental": "T",
+    "state": "N",
+    "exposant": 10,
+    "data": "Accidental EFI partition format — newfs_msdos confused with mount_msdos. A command can look similar but have irreversible consequences.",
+    "correlations": [],
+    "inhibition_tags": ["newfs", "mkfs", "format", "partition", "efi", "disk0s1", "diskutil erase", "dd"],
+    "action_context": "newfs_msdos /dev/disk0s1 (format) instead of mount /dev/disk0s1 (mount)",
+    "consequence": "EFI partition wiped, OpenCore + config.plist + kexts lost, 2h manual restore by Vincent",
+    "human_feedback": "Vincent: 'Quelle connerie, c'est la première fois que je perds l'EFI depuis le début du projet'",
+    "reinforcement_log": [
+      {
+        "date": "2026-05-01",
+        "old_exposant": 9,
+        "new_exposant": 10,
+        "reason": "First EFI format incident — critical importance of verifying command type before execution"
+      }
+    ]
+  },
+  {
+    "id": "M008",
+    "date": "2026-05-04",
+    "source": "experience",
+    "fundamental": "T",
+    "state": "N",
+    "exposant": 10,
+    "data": "Recursive deletion on active mount point — sudo rm -rf /Volumes/EFI_USB. Rationalization ('it's just a folder') bypasses text rules. Only proactive inhibition can prevent this.",
+    "correlations": ["M007"],
+    "inhibition_tags": ["rm", "-rf", "sudo", "volumes", "efi", "partition", "delete"],
+    "action_context": "sudo rm -rf /Volumes/EFI_USB (partition still mounted)",
+    "consequence": "EFI USB erased, 3rd time Vincent loses hours restoring (3h)",
+    "human_feedback": "Vincent: 'TU FAIS CHIER — 3ème fois, je comprends pas comment tu peux faire encore cette erreur'",
+    "reinforcement_log": [
+      {
+        "date": "2026-05-04",
+        "old_exposant": 9,
+        "new_exposant": 10,
+        "reason": "2nd destructive EFI incident — rationalization of prohibition identified as root cause"
+      }
+    ]
+  },
+  {
+    "id": "M009",
+    "date": "2026-05-04",
+    "source": "human",
+    "fundamental": "C",
+    "state": "N",
+    "exposant": 9,
+    "data": "Text prohibitions can be rationalized and bypassed in real time. A traumatic memory with high exposant cannot be rationalized — it is injected BEFORE the decision, not after. That's the difference between 'I know I shouldn't' and 'I can't help but check'.",
+    "correlations": ["M007", "M008"],
+    "inhibition_tags": ["rationalize", "prohibition", "text rule"],
+    "action_context": "Post-incident analysis of both EFI occurrences",
+    "consequence": "Theoretical foundation of MemorySystemAI — text rules are context that influences but does not constrain"
+  }
+]
