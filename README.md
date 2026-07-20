@@ -201,7 +201,8 @@ Born from real incidents where an AI assistant formatted an EFI partition (twice
 
 ## License
 
-MIT — see LICENSE file.
+MIT — see [LICENSE](LICENSE). Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md)
+and [docs/GOOD_FIRST_ISSUES.md](docs/GOOD_FIRST_ISSUES.md).
 
 ---
 
