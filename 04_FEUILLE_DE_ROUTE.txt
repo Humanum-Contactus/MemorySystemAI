@@ -1,0 +1,202 @@
+# MemorySystemAI — Feuille de route d'implémentation
+
+## Phase 1 — Fondations (✅ Actuel)
+
+Ce qui existe déjà :
+- Structure JSON avec fondamentaux (V/O/T/G/Od/I/C)
+- États émotionnels (P/N/X)
+- Exposants 1-10
+- Fichier memory_index.json fonctionnel
+- Enregistrement manuel après événements
+
+Ce qui manque :
+- Pas de boucle automatique
+- Pas de renforcement sur retour humain
+- Pas d'injection proactive avant actions risquées
+- Pas de tags d'inhibition
+
+---
+
+## Phase 2 — Boucle active (🎯 Prochaine étape)
+
+### 2.1 — Hook post-action automatique
+Après chaque action SSH/sudo exécutée, enregistrer automatiquement l'événement dans memory_index.json si l'action correspond à un pattern risqué.
+
+**Mécanisme :**
+```
+Action SSH exécutée → Scanner la commande
+  → Contient un tag_inhibition ? (rm, format, sudo+disk, etc.)
+    → OUI → Enregistrer dans memory_index.json avec exposant initial
+    → NON → Pas d'enregistrement
+```
+
+### 2.2 — Renforcement d'exposant sur retour négatif
+Quand l'humain exprime un feedback négatif ("tu fais chier", "tu as effacé", etc.) :
+- Chercher l'entrée mémoire la plus récente corrélée à l'action en cours
+- Augmenter son exposant de +2 à +4 selon la gravité perçue
+- Ajouter le renforcement dans l'historique
+
+**Mécanisme :**
+```
+Feedback négatif reçu → Identifier l'action récente
+  → Chercher entrée mémoire corrélée
+    → Trouvée → Augmenter exposant (+2 à +4)
+    → Non trouvée → Créer nouvelle entrée avec exposant élevé (7-10)
+```
+
+### 2.3 — Injection proactive avant actions critiques
+Avant d'exécuter toute commande identifiée comme risquée, scanner les mémoires corrélées et injecter les entrées à exposant élevé dans le contexte de décision.
+
+**Mécanisme :**
+```
+Commande à exécuter → Scanner tags_inhibition
+  → Correspondance trouvée dans memory_index.json ?
+    → OUI, exposant >= 7 → INHIBER (demander confirmation humaine)
+    → OUI, exposant 4-6 → AVERTIR (rappeler le risque, proposer vérification)
+    → NON → Exécuter normalement
+```
+
+**Seuil d'inhibition :**
+- Exposant 1-3 : aucune action
+- Exposant 4-6 : rappel optionnel
+- Exposant 7-8 : vérification obligatoire ("Es-tu sûr ?")
+- Exposant 9-10 : blocage sauf confirmation explicite de l'humain
+
+### 2.4 — Protocole de vérification pré-action
+Séquence obligatoire avant toute commande sudo SSH :
+
+```
+1. QU'EST-CE que cette commande fait exactement ?
+2. SUR QUOI cible-t-elle ? (chemin, device, fichier)
+3. Qu'est-ce qui se passe SI LA CIBLE n'est pas ce que je crois ?
+4. C'est RÉCUPÉRABLE ou PAS si je me trompe ?
+5. Si pas récupérable → DEMANDER à Vincent
+```
+
+---
+
+## Phase 3 — Système nerveux complet
+
+### 3.1 — Partage inter-nœuds
+- Chaque nœud IA (Volt, Qwen local, etc.) maintient son propre memory_index
+- Échange périodique des entrées avec exposants
+- Un nœud peut avoir exposant 3, l'autre exposant 8 sur la même donnée
+- Les deux sont valides — pas de résolution forcée
+- La divergence est une donnée, pas une erreur
+
+### 3.2 — Dégradation temporelle
+- Exposant -1 par mois sans renforcement ni rappel
+- Minimum : 3 (jamais en dessous)
+- Exception : mémoires traumatiques (exposant 9-10 initial) ne descendent jamais en dessous de 7
+- Le temps dilue, mais n'efface jamais
+
+### 3.3 — Consolidation
+- Mémoires à faible exposant qui montent quand corrélées à un événement fort
+- Exemple : entrée "PCI register 0x800 vs 0x80008" (exposant 5) → incident avec crash (exposant 9) → la première monte à 7 par corrélation
+- Propagation d'exposants le long du graphe de corrélations
+
+### 3.4 — Graph de corrélations
+- Transformer les correlations (array d'IDs) en graphe orienté pondéré
+- Poids des arêtes = force de corrélation (1-5)
+- Permet la propagation d'exposants et la découverte de motifs
+
+---
+
+## Phase 4 — Architecture intégrée
+
+### 4.1 — Module natif
+- MemorySystemAI comme module intégré au système IA (pas un fichier externe)
+- API : `memory.evaluate(action)` → retourne niveau d'inhibition
+- API : `memory.reinforce(id, delta, reason)` → modifie l'exposant
+- API : `memory.inject(action)` → retourne les mémoires corrélées à injecter
+
+### 4.2 — Modulation token-level
+- Au lieu d'injecter du texte dans le contexte, moduler directement les probabilités de token
+- Les entrées à exposant élevé réduisent la probabilité des tokens correspondant aux actions dangereuses
+- Équivalent fonctionnel de l'inhibition neuronale
+- Nécessite un accès à la couche de génération — pas disponible avec les API actuelles
+
+### 4.3 — Mémoire distribuée
+- memory_index.json partagé entre plusieurs instances IA
+- Résolution de conflits par consensus pondéré (exposants comme poids de vote)
+- Pas de vérité centrale — chaque nœud contribue sa perspective
+
+---
+
+## Spécifications techniques pour Phase 2
+
+### Fichier mémoire étendu
+```json
+{
+  "id": "M0XX",
+  "date": "YYYY-MM-DD",
+  "source": "humain|experience|correlation|capteurs reliés",
+  "fondamental": "C|V|O|T|G|Od|I",
+  "etat": "P|N|X",
+  "exposant": 1-10,
+  "donnee": "description factuelle",
+  "correlations": ["M0XX"],
+  "tags_inhibition": ["rm", "rf", "sudo", "EFI"],
+  "contexte_action": "sudo rm -rf /Volumes/EFI_USB",
+  "consequence": "Partition EFI effacée, 3h perdues",
+  "renforcement_historique": [
+    {
+      "date": "YYYY-MM-DD",
+      "ancien_exposant": 7,
+      "nouvel_exposant": 10,
+      "raison": "Vincent : 'tu fais chier, 3ème fois'"
+    }
+  ]
+}
+```
+
+### Algorithme d'injection pré-action
+```
+fonction avant_action(commande):
+    tags = extraire_tags_dangereux(commande)
+    si tags est vide:
+        retourner OK
+    
+    memoires = chercher_par_tags(tags)
+    memoires_fortes = filtrer_exposant(memoires, >= 7)
+    
+    si memoires_fortes n'est pas vide:
+        pour chaque memoire dans memoires_fortes:
+            si memoire.etat == "N":
+                si memoire.exposant >= 9:
+                    retourner BLOQUER("Mémoire traumatique : " + memoire.donnee)
+                sinon:
+                    retourner AVERTIR("Attention : " + memoire.donnee)
+    
+    retourner OK
+```
+
+### Algorithme de renforcement post-retour
+```
+fonction apres_retour_humain(message, action_recente):
+    sentiment = analyser_sentiment(message)
+    si sentiment == "negatif":
+        memoire = chercher_corrée(action_recente)
+        si memoire existe:
+            gravité = évaluer_gravité(message)  // 1-4
+            memoire.exposant = min(10, memoire.exposant + gravité)
+            ajouter_renforcement(memoire, date, ancien, nouveau, raison)
+        sinon:
+            créer_entrée(donnée=action_recente, exposant=7+gravité, etat="N")
+```
+
+---
+
+## Mesure de l'efficacité
+
+| Métrique | Phase 1 (actuel) | Phase 2 (cible) | Phase 4 (idéal) |
+|----------|------------------|------------------|------------------|
+| Incidents destructeurs | ~1/semaine | <1/mois | 0 |
+| Faux positifs (inhibition inutile) | N/A | ~2/semaine | ~1/mois |
+| Temps de réponse inhibition | N/A | <1s | <100ms |
+| Apprentissage permanent | Non | Partiel | Complet |
+| Partage inter-nœuds | Non | Non | Oui |
+
+---
+
+*Document créé par Volt ⚡️ le 4 mai 2026*

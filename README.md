@@ -130,12 +130,39 @@ if result["blocked"]:
 
 ```
 MemorySystemAI/
-├── __init__.py            # Package init — public API
-├── memory_system.py       # Core module — MemorySystem + MemoryEntry
-├── memory_cli.py          # CLI interface
-├── memory_OpenClaw.py     # OpenClaw integration
-└── memory_index.json      # Memory data (auto-created)
+├── memory_system.py              # Core — MemorySystem + MemoryEntry
+├── memory_cli.py / memory_OpenClaw.py
+├── docs/
+│   ├── EVOLUTION_MEMORY_NODE_2026-07.md   # Chronique du prototype incarné
+│   └── SENSORS_AND_MEMORY_SYSTEM_AI.md    # Proposition de nommage
+└── prototypes/memory-node/       # Organisme laptop : sens + mémoire + nursery
+    ├── organism.py
+    ├── ui/
+    └── openclaw-skill/
 ```
+
+## Prototype incarné (juillet 2026) — `memory-node`
+
+Premier jet d’un **nœud quasi vide** sur machine physique :
+
+- outils **see / hear / speak**
+- consultation LLM externe (ex. Kimi via Puter) comme **outil**, pas identité
+- nursery graphique locale + pont OpenClaw/Telegram
+- apprentissage par exposants ; rappel mémoire avant re-consultation LLM
+
+Voir : [`prototypes/memory-node/README.md`](prototypes/memory-node/README.md)  
+Processus complet : [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md)
+
+Proposition de renommage conceptuel : **Sensors&MemorySystemAI** —  
+[`docs/SENSORS_AND_MEMORY_SYSTEM_AI.md`](docs/SENSORS_AND_MEMORY_SYSTEM_AI.md)
+
+## Roadmap
+
+- [x] **Phase 1** — Core system: MemoryEntry, MemorySystem, inhibition, CLI
+- [x] **Prototype memory-node** — organisme sensoriel incarné (blank slate + tools + nursery)
+- [ ] **Phase 2** — Post-action hook, reinforcement on negative feedback, proactive injection
+- [ ] **Phase 3** — Temporal decay (non-traumatic), heartbeat integration, auto-correlation
+- [ ] **Phase 4** — Multi-node sharing (Qwen local, etc.), cross-agent memory sync
 
 ## Data Schema (memory_index.json)
 
@@ -157,18 +184,11 @@ MemorySystemAI/
       "action_context": "newfs_msdos /dev/disk0s1",
       "consequence": "EFI partition wiped, 2h restore",
       "human_feedback": "Vincent: ...",
-      "reinforcement_log": [...]
+      "reinforcement_log": []
     }
   ]
 }
 ```
-
-## Roadmap
-
-- [x] **Phase 1** — Core system: MemoryEntry, MemorySystem, inhibition, CLI
-- [ ] **Phase 2** — Post-action hook, reinforcement on negative feedback, proactive injection
-- [ ] **Phase 3** — Temporal decay (non-traumatic), heartbeat integration, auto-correlation
-- [ ] **Phase 4** — Multi-node sharing (Qwen local, etc.), cross-agent memory sync
 
 ## Origin
 

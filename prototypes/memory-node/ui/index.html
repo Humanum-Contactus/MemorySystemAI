@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MemorySystemAI — Nursery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Sora:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://js.puter.com/v2/"></script>
+  <style>
+    :root {
+      --bg0: #0c1210;
+      --bg1: #14201b;
+      --ink: #e8f0ea;
+      --muted: #8aa396;
+      --line: rgba(232, 240, 234, 0.12);
+      --accent: #c4f542;
+      --warm: #f0a36b;
+      --danger: #ff6b6b;
+      --ok: #6bcf8e;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; height: 100%;
+      background: var(--bg0);
+      color: var(--ink);
+      font-family: "Sora", system-ui, sans-serif;
+      overflow: hidden;
+    }
+    body {
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(196, 245, 66, 0.08), transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, rgba(240, 163, 107, 0.07), transparent 50%),
+        linear-gradient(165deg, #0c1210 0%, #14201b 48%, #0e1714 100%);
+    }
+    .shell {
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 32px 20px;
+      gap: 18px;
+    }
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      animation: rise 0.7s ease both;
+    }
+    .brand {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-size: clamp(2.4rem, 5vw, 3.6rem);
+      line-height: 0.95;
+      letter-spacing: -0.02em;
+      margin: 0;
+    }
+    .brand em {
+      font-style: italic;
+      color: var(--accent);
+      font-weight: 400;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-top: 8px;
+      max-width: 36ch;
+    }
+    .meta {
+      text-align: right;
+      color: var(--muted);
+      font-size: 0.8rem;
+      display: grid;
+      gap: 6px;
+      justify-items: end;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--ok);
+      box-shadow: 0 0 0 0 rgba(107, 207, 142, 0.5);
+      animation: pulse 2.2s infinite;
+    }
+    main {
+      display: grid;
+      grid-template-columns: 1.35fr 0.9fr;
+      gap: 18px;
+      min-height: 0;
+    }
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+      body { overflow: auto; }
+      .shell { height: auto; min-height: 100%; }
+    }
+    .stage, .side {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(8, 14, 12, 0.55);
+      backdrop-filter: blur(8px);
+      min-height: 0;
+      animation: rise 0.85s ease both;
+    }
+    .side { animation-delay: 0.08s; display: flex; flex-direction: column; }
+    .stage {
+      padding: 22px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+    }
+    .utter {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-size: clamp(1.5rem, 3.2vw, 2.2rem);
+      line-height: 1.25;
+      min-height: 4.5em;
+      white-space: pre-wrap;
+    }
+    .utter .ghost { color: var(--muted); font-style: italic; }
+    .log {
+      overflow: auto;
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      display: grid;
+      gap: 8px;
+    }
+    .log div { border-left: 2px solid var(--line); padding-left: 10px; }
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    button {
+      font-family: inherit;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--ink);
+      padding: 14px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    }
+    button:hover { background: rgba(196, 245, 66, 0.08); border-color: rgba(196, 245, 66, 0.35); }
+    button:active { transform: scale(0.98); }
+    button.primary { background: var(--accent); color: #10210f; border-color: transparent; font-weight: 600; }
+    button.primary:hover { background: #d4ff6a; }
+    button.warn { border-color: rgba(240, 163, 107, 0.45); color: var(--warm); }
+    .composer {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+    }
+    textarea, input[type="text"] {
+      width: 100%;
+      resize: none;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,0.25);
+      color: var(--ink);
+      border-radius: 12px;
+      padding: 14px;
+      font: inherit;
+      outline: none;
+    }
+    textarea:focus, input:focus { border-color: rgba(196, 245, 66, 0.45); }
+    .side-head {
+      padding: 16px 18px 10px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .side-head h2 {
+      margin: 0;
+      font-family: "Instrument Serif", Georgia, serif;
+      font-size: 1.35rem;
+      font-weight: 400;
+    }
+    .mem-list {
+      overflow: auto;
+      padding: 10px 12px 16px;
+      display: grid;
+      gap: 8px;
+      flex: 1;
+    }
+    .mem {
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      animation: rise 0.4s ease both;
+    }
+    .mem .top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .mem .exp { color: var(--accent); }
+    .mem p { margin: 0; font-size: 0.86rem; line-height: 1.4; }
+    .ask-box {
+      margin: 12px;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(240, 163, 107, 0.4);
+      background: rgba(240, 163, 107, 0.08);
+      display: none;
+    }
+    .ask-box.show { display: block; animation: rise 0.35s ease both; }
+    .ask-box h3 {
+      margin: 0 0 8px;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--warm);
+      font-weight: 600;
+    }
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.75rem;
+      animation: rise 1s ease both;
+    }
+    .fb { display: flex; gap: 8px; }
+    .busy { opacity: 0.55; pointer-events: none; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: none; }
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(107, 207, 142, 0.45); }
+      70% { box-shadow: 0 0 0 10px rgba(107, 207, 142, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(107, 207, 142, 0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div>
+        <h1 class="brand">Memory<em>System</em>AI</h1>
+        <p class="sub">Nursery locale — organisme presque vide. Tu lui parles, tu lui montres, tu corriges. Il apprend.</p>
+      </div>
+      <div class="meta">
+        <span class="pill"><span class="dot" id="dot"></span> <span id="live">en ligne</span></span>
+        <div id="stats">—</div>
+      </div>
+    </header>
+
+    <main>
+      <section class="stage" id="stage">
+        <div class="utter" id="utter"><span class="ghost">En attente d’une perception…</span></div>
+        <div class="log" id="log"></div>
+        <div>
+          <div class="actions" style="margin-bottom:12px">
+            <button class="primary" id="btnHear">Écouter</button>
+            <button id="btnSee">Voir</button>
+            <button id="btnSpeakLast">Relire</button>
+            <button class="warn" id="btnVoice">Voix auto</button>
+          </div>
+          <div class="composer">
+            <textarea id="msg" rows="2" placeholder="Écrire une perception / un nom / une correction…"></textarea>
+            <button class="primary" id="btnSend">Envoyer</button>
+          </div>
+          <div class="fb" style="margin-top:10px">
+            <button id="btnYes">Oui / bien</button>
+            <button id="btnNo">Non / faux</button>
+            <button id="btnKimi" class="primary" title="Consulter Kimi via Puter.js (tutoriel free unlimited)">Kimi ON</button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side">
+        <div class="side-head">
+          <h2>Mémoires</h2>
+          <span id="memCount">0</span>
+        </div>
+        <div class="ask-box" id="askBox">
+          <h3>Demande à l’humain</h3>
+          <p id="askQ" style="margin:0 0 10px; font-size:0.9rem"></p>
+          <div class="composer">
+            <input type="text" id="askA" placeholder="Ta réponse…" />
+            <button class="primary" id="btnAsk">Répondre</button>
+          </div>
+        </div>
+        <div class="mem-list" id="mems"></div>
+      </aside>
+    </main>
+
+    <footer>
+      <span>Sur ce portable · Kimi (Puter) = outil de consultation · pas l’identité</span>
+      <span id="clock">—</span>
+    </footer>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let lastUtterance = "";
+    let voiceOn = false;
+    let busy = false;
+    let useKimi = true;
+    const KIMI_MODEL = "moonshotai/kimi-k2";
+
+    function setBusy(v) {
+      busy = v;
+      $("stage").classList.toggle("busy", v);
+    }
+
+    function pushLog(line) {
+      const el = document.createElement("div");
+      el.textContent = line;
+      $("log").prepend(el);
+      while ($("log").children.length > 40) $("log").lastChild.remove();
+    }
+
+    function showUtter(text, ghost) {
+      lastUtterance = text || "";
+      if (!text) {
+        $("utter").innerHTML = '<span class="ghost">' + (ghost || "…") + "</span>";
+        return;
+      }
+      $("utter").textContent = text;
+    }
+
+    function extractPuterText(response) {
+      if (response == null) return "";
+      if (typeof response === "string") return response.trim();
+      if (typeof response === "object") {
+        if (typeof response.text === "string") return response.text.trim();
+        if (response.message) {
+          const c = response.message.content;
+          if (typeof c === "string") return c.trim();
+          if (c != null) return String(c).trim();
+        }
+        if (typeof response.toString === "function") {
+          const s = response.toString();
+          if (s && s !== "[object Object]") return s.trim();
+        }
+      }
+      return String(response).trim();
+    }
+
+    async function consultKimi(perception, memoriesHint) {
+      if (!useKimi || typeof puter === "undefined" || !puter.ai || !puter.ai.chat) {
+        return null;
+      }
+      const system =
+        "Tu es un OUTIL de consultation pour un organisme mémoire quasi vide (MemorySystemAI). " +
+        "Tu n'es PAS l'organisme. Aide à INTERPRÉTER une perception. " +
+        "Réponds en français, factuel, court. " +
+        "Si tu n'as pas assez d'info : réponds exactement JE NE SAIS PAS.\n" +
+        "Mémoires connues:\n" + (memoriesHint || "(presque vide)");
+      const prompt =
+        "Perception brute:\n" + perception + "\n\nQue puis-je en comprendre / apprendre ?\n\n" + system;
+      pushLog("consult Kimi (" + KIMI_MODEL + ")…");
+      const response = await puter.ai.chat(prompt, { model: KIMI_MODEL });
+      const text = extractPuterText(response);
+      return text || null;
+    }
+
+    async function api(path, opts) {
+      const r = await fetch(path, opts);
+      if (!r.ok) throw new Error(path + " " + r.status);
+      return r.json();
+    }
+
+    async function refresh() {
+      try {
+        const st = await api("/status");
+        const puterSrv = st.puter && st.puter.enabled ? " · Puter token OK" : " · Kimi navigateur";
+        $("stats").textContent =
+          (st.memories || 0) + " mémoires · " +
+          (st.bootstrap_only_meta ? "ardoise méta" : "apprend") +
+          (st.camera ? " · caméra" : "") +
+          puterSrv;
+        $("clock").textContent = st.time || "";
+        $("live").textContent = "en ligne";
+        $("dot").style.background = "var(--ok)";
+
+        const ask = st.ask_pending;
+        if (ask && ask.status === "pending" && ask.question) {
+          $("askBox").classList.add("show");
+          $("askQ").textContent = ask.question;
+        } else {
+          $("askBox").classList.remove("show");
+        }
+
+        const mem = await api("/memories");
+        $("memCount").textContent = mem.count;
+        const box = $("mems");
+        box.innerHTML = "";
+        const entries = (mem.entries || []).slice().reverse();
+        for (const e of entries) {
+          const d = document.createElement("div");
+          d.className = "mem";
+          d.innerHTML =
+            '<div class="top"><span>' + e.fundamental + " · " + e.state +
+            " · " + (e.source || "?") + '</span><span class="exp">e' +
+            e.exposant + "</span></div><p></p>";
+          d.querySelector("p").textContent = e.data;
+          box.appendChild(d);
+        }
+      } catch (err) {
+        $("live").textContent = "hors ligne";
+        $("dot").style.background = "var(--danger)";
+      }
+    }
+
+    async function perceive(text, speak) {
+      if (!text || busy) return;
+      setBusy(true);
+      pushLog("→ " + text);
+      showUtter("", useKimi ? "Je consulte Kimi…" : "Je perçois…");
+      try {
+        let interpretation = null;
+        try {
+          interpretation = await consultKimi(text, "(mémoires locales sur le nœud)");
+        } catch (e) {
+          pushLog("Kimi navigateur: " + e.message + " → fallback serveur");
+        }
+        const body = { text, speak: !!speak };
+        if (interpretation) {
+          body.interpretation = interpretation;
+          body.llm_source = "puter-js:" + KIMI_MODEL;
+        }
+        const res = await api("/perceive", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const u = (res.result && res.result.utterance) || "(silence)";
+        showUtter(u);
+        const src = (res.result && (res.result.llm_source || res.result.source)) || "?";
+        pushLog("← " + u + " [" + src + "]");
+        await refresh();
+      } catch (e) {
+        showUtter("Erreur: " + e.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    $("btnKimi").onclick = () => {
+      useKimi = !useKimi;
+      $("btnKimi").textContent = useKimi ? "Kimi ON" : "Kimi OFF";
+      $("btnKimi").classList.toggle("primary", useKimi);
+      pushLog(useKimi ? "outil Kimi (Puter) activé" : "outil Kimi désactivé → Ollama local");
+    };
+
+    $("btnSend").onclick = () => {
+      const t = $("msg").value.trim();
+      $("msg").value = "";
+      perceive(t, false);
+    };
+    $("msg").addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter" && !ev.shiftKey) {
+        ev.preventDefault();
+        $("btnSend").click();
+      }
+    });
+
+    $("btnHear").onclick = async () => {
+      if (busy) return;
+      setBusy(true);
+      showUtter("", "J’écoute…");
+      try {
+        const res = await api("/hear", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ seconds: 4, speak: false }),
+        });
+        setBusy(false);
+        if (res.heard) {
+          pushLog("entendu: " + res.heard);
+          await perceive(res.heard, true);
+        } else {
+          showUtter(res.note || "(rien)");
+          await refresh();
+        }
+      } catch (e) {
+        showUtter("Erreur écoute: " + e.message);
+        setBusy(false);
+      }
+    };
+
+    $("btnSee").onclick = async () => {
+      if (busy) return;
+      setBusy(true);
+      showUtter("", "Je regarde…");
+      try {
+        const res = await api("/see", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ speak: false }),
+        });
+        const frame = res.result && res.result.frame;
+        const raw = (frame && frame.raw) || "frame caméra";
+        const path = (frame && frame.path) || "";
+        setBusy(false);
+        await perceive(
+          "Image caméra capturée (" + path + "). Données: " + raw + ". Que puis-je en comprendre ?",
+          false
+        );
+      } catch (e) {
+        showUtter("Erreur vision: " + e.message);
+        setBusy(false);
+      }
+    };
+
+    $("btnSpeakLast").onclick = async () => {
+      if (!lastUtterance) return;
+      await api("/speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: lastUtterance }),
+      });
+    };
+
+    $("btnYes").onclick = () => perceive("Oui, c'est bien / correct. Bravo.", false);
+    $("btnNo").onclick = () => perceive("Non, c'est faux / incorrect.", false);
+
+    $("btnAsk").onclick = async () => {
+      const answer = $("askA").value.trim();
+      if (!answer) return;
+      await api("/ask/answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answer }),
+      });
+      $("askA").value = "";
+      pushLog("réponse humaine envoyée");
+      await refresh();
+    };
+
+    $("btnVoice").onclick = async () => {
+      voiceOn = !voiceOn;
+      $("btnVoice").textContent = voiceOn ? "Voix ON" : "Voix auto";
+      $("btnVoice").classList.toggle("primary", voiceOn);
+      await api("/voice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: voiceOn }),
+      });
+    };
+
+    refresh();
+    setInterval(refresh, 4000);
+  </script>
+</body>
+</html>

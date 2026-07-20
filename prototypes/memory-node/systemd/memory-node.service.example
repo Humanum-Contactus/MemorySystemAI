@@ -1,0 +1,23 @@
+[Unit]
+Description=Sensors&MemorySystemAI / MemorySystemAI organism (blank slate + sensory tools)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=admin
+Group=audio
+SupplementaryGroups=video audio
+WorkingDirectory=/opt/memorysystemai
+Environment=PYTHONPATH=/opt/memorysystemai
+Environment=OLLAMA_HOST=http://127.0.0.1:11434
+Environment=OLLAMA_MODEL=qwen2.5:1.5b-instruct
+Environment=PUTER_MODEL=moonshotai/kimi-k2
+Environment=AGENT_PORT=8765
+# Puter token: /opt/memorysystemai/state/puter_token.txt (mode 600) — never commit
+ExecStart=/opt/memorysystemai/.venv/bin/python /opt/memorysystemai/organism.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

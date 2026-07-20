@@ -1,0 +1,9 @@
+# Secrets & runtime — never commit
+**/puter_token.txt
+**/ask_human.json
+**/ask_poller_state.json
+**/.venv/
+**/state/
+*.pem
+.env
+.env.*
