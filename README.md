@@ -1,8 +1,13 @@
 # MemorySystemAI
 
-**Sensory-Emotional Memory System for AI Agents**
+**Sensory-Emotional Memory System for AI Agents**  
+*(évolution conceptuelle proposée : **Sensors&MemorySystemAI** — capteurs + mémoire)*
 
 A Python implementation of the MemorySystemAI whitepaper — giving AI agents the ability to remember traumatic experiences and automatically block dangerous actions before they happen.
+
+> **July 2026 — embodied prototype:** [`prototypes/memory-node/`](prototypes/memory-node/)  
+> Blank-slate laptop organism: sensors, exponent memory, LLM-as-tool, local nursery, Telegram tutoring.  
+> Full story: [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md) · [`docs/POURQUOI_CA_COMPTE.md`](docs/POURQUOI_CA_COMPTE.md)
 
 ## The Problem
 
@@ -200,4 +205,5 @@ MIT — see LICENSE file.
 
 ---
 
-*MemorySystemAI — because "I know I shouldn't" is not the same as "I can't."*
+*MemorySystemAI — because "I know I shouldn't" is not the same as "I can't."*  
+*Sensors&MemorySystemAI — because without senses and memory weight, generation is not a nervous system.*

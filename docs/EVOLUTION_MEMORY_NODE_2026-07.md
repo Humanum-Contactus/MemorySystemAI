@@ -1,136 +1,175 @@
 # Évolution juillet 2026 — prototype `memory-node`
 
 **Auteur concept :** Vincent Vermeille (Humanum-Contactus)  
-**Implémentation prototype :** session agent Cursor (DeskTopRel1 → nœud laptop)  
-**Statut :** premier jet démonstratif du concept (Sensors&MemorySystemAI)
+**Implémentation prototype :** session agent Cursor (PC de contrôle LAN → laptop nœud)  
+**Statut :** premier jet démonstratif incarné — Sensors&MemorySystemAI en puissance  
+**Code :** [`prototypes/memory-node/`](../prototypes/memory-node/)
 
-Ce document trace le **processus de mise en place** qui a mené au prototype
-incarné : un portable Ubuntu quasi vide qui perçoit, consulte des LLM comme
-outils, apprend par exposants, et peut demander de l’aide via Telegram.
+Ce document est la **chronique de mise en place** : comment on est passé du concept /
+de la bibliothèque Python à un portable qui perçoit, apprend, et demande de l’aide.
+
+Documents liés :
+
+- [`POURQUOI_CA_COMPTE.md`](POURQUOI_CA_COMPTE.md) — sens & finalité  
+- [`ARCHITECTURE_MEMORY_NODE.md`](ARCHITECTURE_MEMORY_NODE.md) — API & flux  
+- [`SENSORS_AND_MEMORY_SYSTEM_AI.md`](SENSORS_AND_MEMORY_SYSTEM_AI.md) — nommage  
+
+---
+
+## 0. Résumé en une phrase
+
+On a incarné MemorySystemAI comme un **bébé organisme** : ardoise quasi vide,
+capteurs + mémoire à exposants, LLM uniquement comme outil, humain comme tuteur —
+démonstration live (mémoire SatRadio sans repasser par Kimi ; ask via Telegram).
 
 ---
 
 ## 1. Intention (rappel du concept)
 
-Problème : les LLM n’ont pas de système nerveux. Les interdits texte
-n’inhibent pas vraiment.
+**Problème.** Les LLM génèrent. Ils n’ont pas de système nerveux.  
+Les interdits texte n’inhibent pas vraiment (incidents EFI du whitepaper).
 
-Objectif MemorySystemAI / **Sensors&MemorySystemAI** :
+**Objectif.** Sensors&MemorySystemAI :
 
-1. **Capteurs** — entrée monde (V/O/… + outils see/hear/speak)
-2. **Mémoire sensorielle-émotionnelle** — fondamentaux + exposants + P/N/X
-3. **Boucle** — réception → évaluation → enregistrement → renforcement → injection
-4. **LLM** — outil d’interprétation, pas identité / pas loi
-5. **Humain** — tuteur quand la mémoire est insuffisante
+1. **Capteurs** — V/O/T/G/Od/I/C + outils see/hear/speak  
+2. **Mémoire sensorielle-émotionnelle** — exposants + P/N/X  
+3. **Boucle** — réception → évaluation → enregistrement → renforcement → injection  
+4. **LLM** — outil d’interprétation, pas identité / pas loi  
+5. **Humain** — tuteur quand la mémoire est insuffisante  
 
-Le prototype n’est donc **pas** un chatbot local : c’est un **organisme mémoire**
-qui commence presque vide.
+Le prototype n’est **pas** un chatbot local.
 
 ---
 
-## 2. Chronologie du chantier (haut niveau)
+## 2. Chronologie du chantier
 
 ### Phase A — Machine cible
 
-- Portable Acer (ex-dual boot Win/macOS OpenCore) repris comme nœud dédié.
-- Installation **Ubuntu Server 24.04** via PXE/HTTP depuis un PC Windows du LAN
-  (autoinstall, puis réparation chroot quand le postinstall réseau a échoué).
-- Hostname : `memory-node`.
-- Disque Ubuntu sur un SSD ; conserver la prudence sur les EFI (leçons empiriques
-  du whitepaper : incidents `newfs` / `rm` EFI).
+- Laptop Acer repris comme nœud dédié (sortie du rôle Hackintosh pour ce use-case).
+- Install **Ubuntu Server 24.04** via PXE/HTTP depuis un PC Windows du LAN
+  (tftpd, autoinstall cloud-init, ISO servie en HTTP).
+- Coupure : postinstall apt sans route → finition en **chroot** `/target`
+  (user, paquets, hostname `memory-node`).
+- Attention EFI / multi-disques : alignée sur les leçons empiriques du concept
+  (ne jamais confondre partitions boot).
 
 ### Phase B — Stack runtime
 
-- Code MemorySystemAI (bibliothèque Python) déployé sous `/opt/memorysystemai/`.
-- Ollama local + modèle léger CPU (ex. `qwen2.5:1.5b-instruct`) comme **fallback**.
-- Caméra `/dev/video*`, audio ALC255 (groupes `audio`/`video`).
-- Premier agent type “chatbot” → **rejeté** : contraire au concept.
+- Bibliothèque `MemorySystemAI` sous `/opt/memorysystemai/`.
+- Ollama + modèle CPU léger = **fallback** de consultation.
+- Caméra V4L2, audio (groupes `audio` / `video`).
+- Premier jet « agent chatbot + règles texte » → **écarté** (contredit le concept).
 
 ### Phase C — Organisme (`organism.py`)
 
-Réécriture alignée concept :
+Réécriture :
 
-- bootstrap = **méta uniquement** (presque vide sur le monde)
-- outils : `see`, `hear`, `speak`, `consult_llm`, `ask_human`
-- inhibition via **mémoires à exposant élevé**, pas RISK_PATTERNS texte
-- API HTTP `:8765`
-- rappel mémoire **prioritaire** avant reconsultation LLM (après correctifs
-  d’apprentissage SatRadio / enseignement humain)
+| Principe | Implémentation |
+|----------|----------------|
+| Ardoise vide | bootstrap = 6 entrées **méta** seulement |
+| Outils | see, hear, speak, consult_llm, ask_human |
+| Pas d’interdits texte | inhibition = mémoires exposant élevé |
+| API | HTTP `:8765` |
+| Apprendre vraiment | rappel mémoire **avant** LLM (correctifs v1) |
 
 ### Phase D — Nursery graphique locale
 
-- Ubuntu Server n’avait pas de bureau → stack légère :
-  Xorg + Openbox + LightDM + Chromium **kiosk**
-- UI `ui/index.html` servie par l’organisme (`GET /`)
-- Interaction **sur le portable**, sans SSH pour l’usage quotidien
+- Pas de desktop Server → Xorg + Openbox + LightDM + Chromium **kiosk**.
+- UI `ui/index.html` servie par l’organisme (`GET /`).
+- Usage quotidien **sur l’écran du portable**, pas via SSH.
 
-### Phase E — Consultation Kimi via Puter
+### Phase E — Kimi / Puter
 
-- Intégration Puter OpenAI-compatible + Puter.js nursery
-- Modèle de départ : Kimi K3 puis retour **Kimi K2** (suffisant pour l’élevage)
-- Token Puter en fichier local (`state/puter_token.txt`), jamais dans git
+- API Puter OpenAI-compatible + Puter.js dans la nursery.
+- Essai Kimi K3 puis choix **Kimi K2** pour l’élevage de départ.
+- Token dans `state/puter_token.txt` (hors git).
 
-### Phase F — Pont OpenClaw / Telegram
+### Phase F — OpenClaw + Telegram
 
-- Skill `baby-organism` : `perceive` / `ask` / `answer`
-- Poller : notifie Telegram quand `/ask` est `pending`
-- Flux observé : bébé demande → notif → humain répond sur Telegram →
-  réponse intégrée en mémoire (exposant fort)
+- Skill `baby-organism` (`perceive` / `ask` / `answer`).
+- Poller : `/ask` pending → notification Telegram.
+- Flux réel observé : demande bébé → notif → réponse humaine → mémoire.
 
-### Phase G — Démo texte live
+### Phase G — Démo & preuve d’apprentissage
 
-Séquence : identité → nomination (Vincent) → rappel du nom → enseignement
-SatRadioElectronsLibres (WiFi local via Starlink) → re-question répondue
-**depuis la mémoire** (`source: memory`), sans repasser par Kimi.
+1. « Qui es-tu ? » → consultation outil LLM.  
+2. « Je m’appelle Vincent… » → mémorisation.  
+3. « Comment je m’appelle ? » → rappel.  
+4. Enseignement **SatRadioElectronsLibres** = WiFi local via Starlink.  
+5. Re-question → **`source: memory`** (sans Kimi).  
+6. Ask Telegram + réponse intégrée (exposant 8).
 
 ---
 
 ## 3. Architecture résultante
 
 ```
-[Nursery kiosk sur laptop]          [Telegram / humain]
+[Nursery kiosk laptop]              [Telegram / humain]
          │                                    │
          ▼                                    ▼
    organism.py :8765  ◄──────────  OpenClaw (skill + poller)
          │
          ├─ MemorySystem (fondamentaux / exposants)
          ├─ outils see / hear / speak
-         └─ consult LLM : Puter/Kimi → Ollama fallback
+         └─ consult LLM : Puter/Kimi → Ollama
 ```
 
-Code publié sous : `prototypes/memory-node/`.
+Détail API / env : [`ARCHITECTURE_MEMORY_NODE.md`](ARCHITECTURE_MEMORY_NODE.md).
 
 ---
 
-## 4. Leçons apprises (prototype)
+## 4. Décisions de conception (traces)
 
-1. **Ne pas commencer par un chatbot** — on fausse immédiatement le concept.
-2. **Enregistrer ≠ rappeler** — sans priorisation mémoire, le LLM ré-interprète
-   à chaque fois et masque l’apprentissage.
-3. **Enseignement humain** (`X est Y`) doit monter l’exposant (≈8) pour injecter.
-4. **Ask Telegram** : la notif marche ; le relais `answer` OpenClaw doit être
-   robuste (sinon intégrer manuellement / renforcer la skill).
-5. **Secrets** : tokens Puter/Telegram hors dépôt.
-6. **Nom** : `Sensors&MemorySystemAI` décrit mieux capteurs + mémoire que
-   MemorySystemAI seul (proposition — voir doc dédiée).
-
----
-
-## 5. Suite logique (hors premier jet)
-
-- Inhibition **avant action machine** réelle (SSH/sudo), pas seulement dialogue
-- Multi-nœuds + divergence d’exposants (feuille de route phase 3)
-- Dégradation temporelle / consolidation
-- Vision LLM réelle (image → description) au lieu du raw frame seul
-- Relais Telegram `answer` 100 % automatique
-- Nettoyage du bruit de journal (`Message reçu:`) vs faits enseignés
+| Tentation | Décision |
+|-----------|----------|
+| Chatbot + system prompt d’interdits | Rejeté |
+| Remplir la mémoire au boot | Rejeté (ardoise) |
+| LLM = personnalité du nœud | Rejeté (outil seulement) |
+| Toujours appeler Kimi | Rejeté après correctif recall |
+| Contrôle seulement en SSH | Rejeté → nursery locale |
+| Kimi K3 dès le départ | Downgrade volontaire à K2 pour l’élevage |
 
 ---
 
-## 6. Fichiers de référence dans ce dépôt
+## 5. Leçons apprises
 
-- Concept : `01_CONCEPT_FONDAMENTAL.txt`
-- Feuille de route : `04_FEUILLE_DE_ROUTE.txt`
-- Core Python : `memory_system.py`
-- Prototype incarné : `prototypes/memory-node/`
-- Proposition de nommage : `docs/SENSORS_AND_MEMORY_SYSTEM_AI.md`
+1. Commencer par un chatbot **tue** le concept immédiatement.  
+2. Enregistrer ≠ rappeler — sans priorité mémoire, le LLM masque l’apprentissage.  
+3. L’enseignement humain (`X est Y`) doit monter l’exposant (~8).  
+4. Ask Telegram : notif OK ; skill `answer` à solidifier.  
+5. Secrets hors dépôt.  
+6. Le nom **Sensors&MemorySystemAI** colle mieux à la finalité.
+
+---
+
+## 6. Suite (hors premier jet)
+
+- [ ] Inhibition avant **actions machines** (SSH/sudo/disk)  
+- [ ] Multi-nœuds + divergence d’exposants  
+- [ ] Dégradation temporelle / consolidation  
+- [ ] Vision LLM réelle  
+- [ ] Relais Telegram `answer` 100 % automatique  
+- [ ] Réduire le bruit de journal dans l’index  
+
+---
+
+## 7. Carte des fichiers
+
+| Chemin | Rôle |
+|--------|------|
+| `prototypes/memory-node/organism.py` | Runtime organisme |
+| `prototypes/memory-node/ui/` | Nursery |
+| `prototypes/memory-node/openclaw-skill/` | Pont agent/Telegram |
+| `prototypes/memory-node/systemd/` | Exemple service |
+| `memory_system.py` | Cœur MemorySystemAI |
+| `01_CONCEPT_FONDAMENTAL.txt` | Concept |
+| `04_FEUILLE_DE_ROUTE.txt` | Roadmap historique |
+| `docs/*` | Documentation évolution |
+
+---
+
+## 8. Remerciements / provenance
+
+Concept et finalité : **Vincent Vermeille**.  
+Incarnation prototype juillet 2026 : collaboration humaine + agent Cursor sur le LAN,
+en restant fidèle à l’idée d’origine (pas un gadget chatbot).
