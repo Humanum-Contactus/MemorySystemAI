@@ -20,6 +20,7 @@ Runtime file reference under [`prototypes/memory-node/`](../../prototypes/memory
 | [`voice_memory.py`](../../prototypes/memory-node/voice_memory.py) | O | Voice embeddings → identity |
 | [`sensor_camera.py`](../../prototypes/memory-node/sensor_camera.py) | V | V4L2 brightness/gamma/exposure auto |
 | [`sensor_mic.py`](../../prototypes/memory-node/sensor_mic.py) | O | ALSA Capture / Mic Boost from RMS |
+| [`autonomy.py`](../../prototypes/memory-node/autonomy.py) | C/I + V/O | Autonomous exploration (memory golden rule) |
 | [`ui/index.html`](../../prototypes/memory-node/ui/index.html) | — | Nursery kiosk |
 | [`openclaw-skill/`](../../prototypes/memory-node/openclaw-skill/) | — | Telegram bridge (**transitional**, not the core) |
 

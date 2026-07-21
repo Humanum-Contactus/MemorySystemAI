@@ -20,6 +20,7 @@ Référence des fichiers runtime sous [`prototypes/memory-node/`](../prototypes/
 | [`voice_memory.py`](../prototypes/memory-node/voice_memory.py) | O | Empreintes vocales → identité |
 | [`sensor_camera.py`](../prototypes/memory-node/sensor_camera.py) | V | V4L2 brightness/gamma/exposure auto |
 | [`sensor_mic.py`](../prototypes/memory-node/sensor_mic.py) | O | ALSA Capture / Mic Boost selon RMS |
+| [`autonomy.py`](../prototypes/memory-node/autonomy.py) | C/I + V/O | Outils d'exploration autonome (règle d'or mémoire) |
 | [`ui/index.html`](../prototypes/memory-node/ui/index.html) | — | Nursery kiosk |
 | [`openclaw-skill/`](../prototypes/memory-node/openclaw-skill/) | — | Pont Telegram (**transitoire**, pas le cœur) |
 
@@ -90,6 +91,27 @@ peut être écrite en mémoire (fondamental V ou O).
 | Micro | `Capture`, `Internal Mic Boost` | monter | baisser (saturation) |
 
 Note : le volume UI `Master` = **haut-parleur**, pas le micro. Micro = `/mic`.
+
+---
+
+## `autonomy.py` — découverte autonome
+
+Règle d'or : **chaque** outil passe par `through_memory()` :
+inhibition (tags + exposant) → action → enregistrement (fondamental / état / exposant).
+
+| Outil | Rôle |
+|-------|------|
+| `probe_sensors` / `body_map` | Découvrir / rappeler le corps |
+| `look_around` / `listen_ambient` | Explorer V/O + détecter changements |
+| `reach_local` | Passerelle LAN bornée (ping) |
+| `wonder` / `correlate` | Hypothèses + corroboration multi-sens |
+| `experiment` | Essai sûr (gain micro) |
+| `craft_tool` | Idée d'outil en mémoire (**pas** d'exécution shell) |
+| `ask_when_stuck` | Question tuteur après exploration (anti-harcèlement) |
+| `explore_cycle` | Enchaînement (`POST /explore`) |
+
+API : `POST /explore`, `POST /autonomy` `{ "tool": "wonder" }`.  
+UI nursery : bouton **Explorer**.
 
 ---
 

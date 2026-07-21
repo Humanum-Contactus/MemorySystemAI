@@ -375,6 +375,7 @@
           <div class="actions">
             <button class="primary" id="btnHear">Écouter</button>
             <button id="btnSee">Voir</button>
+            <button id="btnExplore" title="Exploration autonome (mémoire + exposants)">Explorer</button>
             <button id="btnSpeakLast">Relire</button>
             <button class="warn" id="btnVoice">Voix auto</button>
           </div>
@@ -727,6 +728,35 @@
       } catch (e) {
         showUtter("Erreur vision: " + e.message);
         $("eyeStatus").textContent = "erreur";
+      } finally {
+        setBusy(false);
+      }
+    };
+
+    $("btnExplore").onclick = async () => {
+      if (busy) return;
+      setBusy(true);
+      showUtter("", "J'explore de façon autonome (mémoire + exposants)…");
+      pushLog("→ explore_cycle");
+      try {
+        const res = await api("/explore", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ speak: true, ask_if_stuck: true }),
+        });
+        const r = res.result || {};
+        const u = r.utterance || "(exploration silencieuse)";
+        showUtter(u);
+        pushLog("← explore [" + (r.source || "autonomy") + "] steps=" + (r.steps || []).join(","));
+        (r.results || []).forEach((step) => {
+          if (step && step.tool) {
+            pushLog("  · " + step.tool + (step.blocked ? " [inhibé]" : "") + ": " + (step.utterance || "").slice(0, 100));
+          }
+          if (step && step.preview) showPreview(step.preview, "explore");
+        });
+        await refresh();
+      } catch (e) {
+        showUtter("Erreur exploration: " + e.message);
       } finally {
         setBusy(false);
       }

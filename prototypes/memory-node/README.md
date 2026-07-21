@@ -31,6 +31,7 @@ Documentation :
 | `voice_memory.py` | Empreintes voix → identité (O) |
 | `sensor_camera.py` | Auto-réglage caméra V4L2 |
 | `sensor_mic.py` | Auto-réglage gain micro ALSA |
+| `autonomy.py` | Exploration autonome (crible mémoire + exposants) |
 | `ui/index.html` | Nursery kiosk |
 | `requirements.txt` | Dépendances Python indicatives |
 | `systemd/memory-node.service.example` | Unit systemd |

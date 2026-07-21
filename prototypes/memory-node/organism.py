@@ -8,11 +8,8 @@ C'est un système de mémoire sensorielle-émotionnelle qui :
   - perçoit via des OUTILS (voir, entendre, parler)
   - consulte des LLM externes comme OUTILS pour interpréter
   - apprend (fondamentaux V/O/T/... + exposants)
-  - inhibe seulement via des mémoires apprises (exposant élevé + tags),
+  - inhibe seulement via des mémoires apprises (exposant élevé),
     pas via des interdits textuels hardcodés
-
-Les normes (anti-harcèlement, corrections STT, …) vivent dans memory_index.
-Voir docs/MODULES_MEMORY_NODE.md et docs/ARCHITECTURE_MEMORY_NODE.md.
 """
 from __future__ import annotations
 
@@ -61,6 +58,7 @@ from sensor_mic import (  # noqa: E402
     set_percent as mic_set_percent,
     CAPTURE_CTRL as MIC_CAPTURE_CTRL,
 )
+from autonomy import AutonomyKit  # noqa: E402
 
 STATE = ROOT / "state"
 INDEX = ROOT / "MemorySystemAI" / "memory_index.json"
@@ -721,6 +719,7 @@ class Organism:
             VOICE_DB.unlink()
         self.visual = VisualPersonMemory(VISUAL_DB)
         self.voice = VoicePersonMemory(VOICE_DB)
+        self.autonomy = AutonomyKit(self, STATE)
 
     def known_identity_labels(self) -> List[str]:
         """Noms déjà ancrés (visage + voix)."""
@@ -734,6 +733,65 @@ class Organism:
             if lab and lab not in labels:
                 labels.append(lab)
         return labels
+
+    def cycle_explore(
+        self,
+        steps: Optional[List[str]] = None,
+        ask_if_stuck: bool = True,
+        speak: bool = False,
+    ) -> Dict[str, Any]:
+        """Exploration autonome : chaque outil = inhibition + mémoire + exposant."""
+
+        def _cap() -> Dict[str, Any]:
+            return tool_see(auto_tune=True)
+
+        def _rec(seconds: float) -> Dict[str, Any]:
+            return _record_wav(seconds)
+
+        out = self.autonomy.explore_cycle(
+            capture_fn=_cap,
+            record_fn=_rec,
+            mic_summary_fn=mic_summary,
+            mic_set_fn=lambda p: mic_set_percent(MIC_CAPTURE_CTRL, int(p), capture=True),
+            steps=steps,
+            ask_if_stuck=ask_if_stuck,
+        )
+        if speak and out.get("utterance"):
+            tool_speak(str(out["utterance"]))
+        return {"ok": True, "result": out}
+
+    def cycle_autonomy_tool(self, name: str, **kwargs: Any) -> Dict[str, Any]:
+        """Exécute un seul outil d'autonomie (toujours via mémoire)."""
+        name = (name or "").strip().lower()
+        a = self.autonomy
+        if name in ("probe", "probe_sensors"):
+            r = a.probe_sensors()
+        elif name in ("body", "body_map"):
+            r = a.body_map()
+        elif name in ("look", "look_around"):
+            r = a.look_around(lambda: tool_see(auto_tune=True))
+        elif name in ("listen", "listen_ambient"):
+            r = a.listen_ambient(_record_wav, float(kwargs.get("seconds") or 2.5))
+        elif name in ("reach", "reach_local"):
+            r = a.reach_local()
+        elif name == "wonder":
+            r = a.wonder()
+        elif name == "correlate":
+            r = a.correlate()
+        elif name in ("experiment", "experiment_safe"):
+            r = a.experiment_safe(
+                mic_summary,
+                lambda p: mic_set_percent(MIC_CAPTURE_CTRL, int(p), capture=True),
+            )
+        elif name in ("craft", "craft_tool"):
+            r = a.craft_tool(str(kwargs.get("idea") or ""))
+        elif name in ("ask", "ask_when_stuck"):
+            r = a.ask_when_stuck(str(kwargs.get("question") or "Je suis bloqué — aide-moi."))
+        else:
+            return {"ok": False, "error": f"unknown autonomy tool: {name}"}
+        if kwargs.get("speak") and r.get("utterance"):
+            tool_speak(str(r["utterance"]))
+        return {"ok": True, "result": r}
 
     def auditory_corrections_from_memory(self) -> List[Tuple[str, str, Any]]:
         """Paires (entendu, voulu, entry) issues UNIQUEMENT du memory_index."""
@@ -1769,6 +1827,9 @@ class Organism:
                 "see", "hear", "speak", "volume", "camera", "mic",
                 "consult_llm", "consult_puter_kimi", "ask_human",
                 "visual_memory", "voice_memory",
+                "autonomy:probe", "autonomy:look", "autonomy:listen",
+                "autonomy:reach", "autonomy:wonder", "autonomy:correlate",
+                "autonomy:experiment", "autonomy:craft", "autonomy:explore",
             ],
             "visual": self.visual.summary(),
             "voice": self.voice.summary(),
@@ -1778,6 +1839,11 @@ class Organism:
             },
             "camera_sensor": self._camera_status(),
             "mic_sensor": mic_summary(),
+            "body_map": (
+                self.autonomy._load_json(self.autonomy.body_path, {})
+                if getattr(self, "autonomy", None)
+                else {}
+            ),
             "vision": {
                 "provider": get_vision_provider(),
                 "nvidia": {
@@ -2016,6 +2082,56 @@ class Handler(BaseHTTPRequestHandler):
                     seconds=float(data.get("seconds") or 4),
                     speak=bool(data.get("speak", True)),
                     auto_tune=bool(data.get("auto_tune", True)),
+                ),
+            )
+            return
+        if self.path.startswith("/explore") or self.path.startswith("/autonomy/cycle"):
+            steps = data.get("steps")
+            if isinstance(steps, str):
+                steps = [s.strip() for s in steps.split(",") if s.strip()]
+            if steps is not None and not isinstance(steps, list):
+                steps = None
+            self._json(
+                200,
+                ORG.cycle_explore(
+                    steps=steps,
+                    ask_if_stuck=bool(data.get("ask_if_stuck", True)),
+                    speak=bool(data.get("speak", False)),
+                ),
+            )
+            return
+        if self.path.startswith("/autonomy"):
+            tool = str(data.get("tool") or data.get("name") or "").strip()
+            if not tool:
+                self._json(
+                    400,
+                    {
+                        "error": "tool required",
+                        "tools": [
+                            "probe_sensors", "body_map", "look_around", "listen_ambient",
+                            "reach_local", "wonder", "correlate", "experiment",
+                            "craft_tool", "ask_when_stuck", "explore",
+                        ],
+                    },
+                )
+                return
+            if tool in ("explore", "explore_cycle", "cycle"):
+                self._json(
+                    200,
+                    ORG.cycle_explore(
+                        ask_if_stuck=bool(data.get("ask_if_stuck", True)),
+                        speak=bool(data.get("speak", False)),
+                    ),
+                )
+                return
+            self._json(
+                200,
+                ORG.cycle_autonomy_tool(
+                    tool,
+                    speak=bool(data.get("speak", False)),
+                    seconds=data.get("seconds"),
+                    idea=data.get("idea"),
+                    question=data.get("question"),
                 ),
             )
             return
