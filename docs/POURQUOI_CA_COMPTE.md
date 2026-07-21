@@ -1,5 +1,7 @@
 # Pourquoi ça compte
 
+> **FR (source)** · **[English →](en/WHY_IT_MATTERS.md)** · [`LANGUES.md`](LANGUES.md)
+
 **Auteur du concept :** Vincent Vermeille (Humanum-Contactus)  
 **Contexte :** passage du whitepaper / bibliothèque Python à un **organisme incarné** (`memory-node`, juillet 2026).
 

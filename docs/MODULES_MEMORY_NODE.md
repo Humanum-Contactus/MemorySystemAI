@@ -1,5 +1,7 @@
 # Modules — prototype `memory-node`
 
+> **FR** · **[English →](en/MODULES_MEMORY_NODE.md)** · [`LANGUES.md`](LANGUES.md)
+
 Référence des fichiers runtime sous [`prototypes/memory-node/`](../prototypes/memory-node/).
 
 > **Règle de design :** les *normes* (ne pas harceler, corrections STT, etc.) vivent

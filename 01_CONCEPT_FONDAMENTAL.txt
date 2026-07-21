@@ -1,5 +1,7 @@
 # MemorySystemAI — Système de Mémoire Sensorielle pour IA
 
+> **FR (source conceptuelle)** · aperçu EN : [`docs/en/CONCEPT_FUNDAMENTAL.md`](docs/en/CONCEPT_FUNDAMENTAL.md) · [`docs/LANGUES.md`](docs/LANGUES.md)
+
 ## Concept fondamental
 
 Un système de mémoire structuré sur les 7 fondamentaux de la Nature, avec des exposants émotionnels modulables, formant une boucle d'apprentissage permanente : **Action → Évaluation → Exposant → Injection → Décision**.

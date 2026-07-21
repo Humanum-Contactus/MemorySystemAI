@@ -1,17 +1,23 @@
-# Contributing to MemorySystemAI / Sensors&MemorySystemAI
+# Contribuer / Contributing — MemorySystemAI
 
-Thank you for your interest. This project is **open source** under the
-[MIT License](LICENSE) (Vincent Vermeille — Humanum Contactus).
+> **FR + EN** · Politique des langues : [`docs/LANGUES.md`](docs/LANGUES.md)  
+> Le français prime pour le sens conceptuel.
 
-## What this project is
+MIT License — Vincent Vermeille (Humanum Contactus).
 
-A **sensory-emotional memory system** for AI agents: fundamentals, emotional
-exponents, learned inhibition — not a chatbot with text bans.
+---
 
-The July 2026 `memory-node` prototype shows an almost-empty organism with
-sensors, memory-first recall, LLM-as-tool, and human tutoring (Telegram).
+## Français
 
-Please read before coding:
+### Ce qu’est ce projet
+
+Système de **mémoire sensorielle-émotionnelle** pour agents IA : fondamentaux,
+exposants, inhibition **apprise** — pas un chatbot avec interdits texte.
+
+Le prototype `memory-node` (juillet 2026) montre un organisme quasi vide avec
+capteurs, rappel mémoire d’abord, LLM = outil, tuteur humain.
+
+**À lire avant de coder :**
 
 1. [`01_CONCEPT_FONDAMENTAL.txt`](01_CONCEPT_FONDAMENTAL.txt)  
 2. [`docs/POURQUOI_CA_COMPTE.md`](docs/POURQUOI_CA_COMPTE.md)  
@@ -19,62 +25,61 @@ Please read before coding:
 4. [`docs/MODULES_MEMORY_NODE.md`](docs/MODULES_MEMORY_NODE.md)  
 5. [`prototypes/memory-node/README.md`](prototypes/memory-node/README.md)
 
-## Design rules (non-negotiable)
+### Règles de design (non négociables)
 
-- **No text bans as identity.** Inhibition = learned memories (exposant + tags).
-- **Norms live in `memory_index`**, not in Python lookup tables / rate-limit files.
-- **LLM is a tool**, not the organism’s persona.
-- Prefer sensory corroboration and memory-first recall over “just ask the model”.
-- Do not commit secrets (`state/*_token.txt`, `.env`, personal journals).
+- **Pas d’interdits texte comme identité.** Inhibition = mémoires (exposant + tags).
+- **Les normes vivent dans `memory_index`**, pas dans des tables Python / rate-limits.
+- **Le LLM est un outil**, pas la persona de l’organisme.
+- Préférer corroboration sensorielle et rappel mémoire plutôt que « demander au modèle ».
+- Ne pas committer de secrets (`state/*_token.txt`, `.env`, journaux privés).
+- Ardoise d’abord : pas de savoir encyclopédique au bootstrap.
+- PRs petites et relisibles.
 
-## Design rules (non-negotiable)
+### Comment contribuer
 
-- **LLM ≠ identity.** Models (Kimi, Ollama, …) are *consult tools*.
-- **No text-ban security.** Inhibition must come from **memories + exponents**.
-- **Blank slate first.** Do not ship encyclopedic world knowledge in bootstrap.
-- **Memory before re-ask.** If a fact was taught, prefer recall over calling the LLM again.
-- Prefer small, reviewable PRs over large rewrites.
-
-## How to contribute
-
-1. Fork the repo / open a branch from `main`.
-2. Pick a [good first issue](#good-first-issues) or propose an issue first.
-3. Keep secrets out of git (`puter_token`, Telegram tokens, personal `memory_index.json`).
-4. Open a Pull Request with: *what*, *why*, *how to test*.
-
-### Local core library
+1. Fork / branche depuis `main`.  
+2. Choisir une [good first issue](docs/GOOD_FIRST_ISSUES.md) ou ouvrir une issue.  
+3. Ouvrir une PR : *quoi*, *pourquoi*, *comment tester*.
 
 ```bash
 python memory_cli.py stats
 python memory_cli.py check "sudo rm -rf /efi"
 ```
 
-### Prototype `memory-node` (optional hardware)
+---
 
-See [`prototypes/memory-node/README.md`](prototypes/memory-node/README.md).  
-You can develop against the HTTP API without the full kiosk stack.
+## English
 
-## Good first issues
+### What this project is
 
-These are intentional on-ramps for new contributors:
+A **sensory-emotional memory system** for AI agents: fundamentals, emotional
+exponents, **learned** inhibition — not a chatbot with text bans.
 
-| # | Title | Area |
-|---|--------|------|
-| 1 | Reduce journal noise in memory index | `organism` recall / learning |
-| 2 | Harden Telegram `answer` relay (OpenClaw skill) | `openclaw-skill` |
-| 3 | Unit tests for memory-first recall | tests |
-| 4 | Pre-action inhibition hook example (SSH/sudo dry-run) | core + docs |
+The July 2026 `memory-node` prototype shows an almost-empty organism with
+sensors, memory-first recall, LLM-as-tool, and human tutoring.
 
-Detailed descriptions: [`docs/GOOD_FIRST_ISSUES.md`](docs/GOOD_FIRST_ISSUES.md).
+**Read before coding:**
 
-## Communication
+1. [`docs/en/CONCEPT_FUNDAMENTAL.md`](docs/en/CONCEPT_FUNDAMENTAL.md) (overview) + FR `01_` for full depth  
+2. [`docs/en/WHY_IT_MATTERS.md`](docs/en/WHY_IT_MATTERS.md)  
+3. [`docs/en/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/en/EVOLUTION_MEMORY_NODE_2026-07.md)  
+4. [`docs/en/MODULES_MEMORY_NODE.md`](docs/en/MODULES_MEMORY_NODE.md)  
+5. [`prototypes/memory-node/README.en.md`](prototypes/memory-node/README.en.md)
 
-- Prefer GitHub Issues / PRs for technical discussion.
-- Concept authority: Vincent Vermeille (Humanum-Contactus).
-- Constructive disagreement welcome — especially when it protects the nervous-system model against “just add another system prompt”.
+### Design rules (non-negotiable)
 
-## Code of collaboration
+- **No text bans as identity.** Inhibition = memories (exposant + tags).
+- **Norms live in `memory_index`**, not Python lookup tables / rate-limit files.
+- **LLM is a tool**, not the organism’s persona.
+- Prefer sensory corroboration and memory-first recall over “just ask the model”.
+- Do not commit secrets.
+- Blank slate first — no encyclopedic bootstrap.
+- Prefer small, reviewable PRs.
 
-Be precise, kind, and concrete. This project exists because text rules failed in
-real life; help us build mechanisms that **constrain**, not slogans that
-**suggest**.
+### How to contribute
+
+1. Fork / branch from `main`.  
+2. Pick a [good first issue](docs/GOOD_FIRST_ISSUES.md) or propose an issue.  
+3. Open a PR with: *what*, *why*, *how to test*.
+
+Thank you — merci.

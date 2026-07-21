@@ -1,5 +1,7 @@
 # Évolution juillet 2026 — prototype `memory-node`
 
+> **FR (source)** · **[English →](en/EVOLUTION_MEMORY_NODE_2026-07.md)** · [`LANGUES.md`](LANGUES.md)
+
 **Auteur concept :** Vincent Vermeille (Humanum-Contactus)  
 **Implémentation prototype :** session agent Cursor (PC de contrôle LAN → laptop nœud)  
 **Statut :** premier jet démonstratif incarné — Sensors&MemorySystemAI en puissance  

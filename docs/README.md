@@ -1,18 +1,33 @@
 # Documentation — index
 
+> **FR** · **[English index →](en/README.md)** · [`LANGUES.md`](LANGUES.md)  
+> Le **français** est la source conceptuelle ; l’anglais est la traduction.
+
+## Français (source)
+
 | Document | Contenu |
 |----------|---------|
-| [`EVOLUTION_MEMORY_NODE_2026-07.md`](EVOLUTION_MEMORY_NODE_2026-07.md) | Chronique : du concept au prototype incarné (phases A–I) |
-| [`ARCHITECTURE_MEMORY_NODE.md`](ARCHITECTURE_MEMORY_NODE.md) | Architecture, API HTTP, flux mémoire vs LLM |
-| [`MODULES_MEMORY_NODE.md`](MODULES_MEMORY_NODE.md) | Référence des modules runtime (organism, sens, capteurs) |
-| [`SENSORS_AND_MEMORY_SYSTEM_AI.md`](SENSORS_AND_MEMORY_SYSTEM_AI.md) | Proposition de nommage Sensors&MemorySystemAI |
-| [`POURQUOI_CA_COMPTE.md`](POURQUOI_CA_COMPTE.md) | Sens de la recherche, finalité, ce que ce n’est pas |
-| [`../prototypes/memory-node/README.md`](../prototypes/memory-node/README.md) | Guide du prototype runtime |
-| [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md) | Issues d’accueil pour contributeurs |
-| [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Guide de contribution (MIT, règles de design) |
-| [`../04_FEUILLE_DE_ROUTE.txt`](../04_FEUILLE_DE_ROUTE.txt) | Feuille de route phases 1–3 |
-| [`../05_ANALYSE_PHILOSOPHIQUE.txt`](../05_ANALYSE_PHILOSOPHIQUE.txt) | Analyse philosophique |
+| [`LANGUES.md`](LANGUES.md) | Politique FR / EN |
+| [`POURQUOI_CA_COMPTE.md`](POURQUOI_CA_COMPTE.md) | Sens de la recherche |
+| [`EVOLUTION_MEMORY_NODE_2026-07.md`](EVOLUTION_MEMORY_NODE_2026-07.md) | Chronique prototype (phases A–I) |
+| [`ARCHITECTURE_MEMORY_NODE.md`](ARCHITECTURE_MEMORY_NODE.md) | Architecture & API |
+| [`MODULES_MEMORY_NODE.md`](MODULES_MEMORY_NODE.md) | Modules runtime |
+| [`SENSORS_AND_MEMORY_SYSTEM_AI.md`](SENSORS_AND_MEMORY_SYSTEM_AI.md) | Nommage Sensors&MemorySystemAI |
+| [`../01_CONCEPT_FONDAMENTAL.txt`](../01_CONCEPT_FONDAMENTAL.txt) | Concept fondateur |
+| [`../prototypes/memory-node/README.md`](../prototypes/memory-node/README.md) | Guide prototype |
+| [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md) | Issues d’accueil |
+| [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Contribution (bilingue) |
 
-Prototype code : [`../prototypes/memory-node/`](../prototypes/memory-node/).
+## English (mirrors)
 
-> Le journal de session privé (`JOURNAL_COGITATION_BEBE_IA.txt`) n’est **pas** publié.
+| Document | Content |
+|----------|---------|
+| [`en/WHY_IT_MATTERS.md`](en/WHY_IT_MATTERS.md) | Why it matters |
+| [`en/CONCEPT_FUNDAMENTAL.md`](en/CONCEPT_FUNDAMENTAL.md) | Concept overview |
+| [`en/EVOLUTION_MEMORY_NODE_2026-07.md`](en/EVOLUTION_MEMORY_NODE_2026-07.md) | Evolution chronicle |
+| [`en/ARCHITECTURE_MEMORY_NODE.md`](en/ARCHITECTURE_MEMORY_NODE.md) | Architecture & API |
+| [`en/MODULES_MEMORY_NODE.md`](en/MODULES_MEMORY_NODE.md) | Runtime modules |
+| [`../README.en.md`](../README.en.md) | Project README (EN) |
+| [`../prototypes/memory-node/README.en.md`](../prototypes/memory-node/README.en.md) | Prototype guide (EN) |
+
+> Private session journal is **not** published.

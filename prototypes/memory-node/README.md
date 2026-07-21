@@ -1,5 +1,7 @@
 # Prototype `memory-node` — organisme incarné
 
+> **FR** · **[English →](README.en.md)** · [`docs/LANGUES.md`](../../docs/LANGUES.md)
+
 Premier jet d’un **nœud Sensors&MemorySystemAI** : ardoise quasi vide,
 outils sensoriels, consultation LLM externe, apprentissage par exposants,
 nursery graphique locale.

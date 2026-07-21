@@ -1,5 +1,7 @@
 # Architecture — prototype `memory-node`
 
+> **FR** · **[English →](en/ARCHITECTURE_MEMORY_NODE.md)** · [`LANGUES.md`](LANGUES.md)
+
 ## Vue d’ensemble
 
 ```

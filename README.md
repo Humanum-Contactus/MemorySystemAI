@@ -1,213 +1,119 @@
 # MemorySystemAI
 
-**Sensory-Emotional Memory System for AI Agents**  
-*(évolution conceptuelle proposée : **Sensors&MemorySystemAI** — capteurs + mémoire)*
+**Système de mémoire sensorielle-émotionnelle pour agents IA**  
+*(évolution proposée : **Sensors&MemorySystemAI** — capteurs + mémoire)*
 
-A Python implementation of the MemorySystemAI whitepaper — giving AI agents the ability to remember traumatic experiences and automatically block dangerous actions before they happen.
+> **FR** (réflexion / concept) · **[English version →](README.en.md)**  
+> Politique des langues : [`docs/LANGUES.md`](docs/LANGUES.md)
 
-> **July 2026 — embodied prototype:** [`prototypes/memory-node/`](prototypes/memory-node/)  
-> Blank-slate laptop organism: sensors (vision/voice + auto gain), exponent memory,  
-> learned norms in `memory_index` (not hardcoded bans), LLM-as-tool, local nursery.  
-> Docs: [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md) ·  
+Implémentation Python du whitepaper MemorySystemAI : permettre aux agents de
+**retenir des expériences** (y compris traumatiques) et **inhiber** des actions
+dangereuses *avant* qu’elles n’arrivent — pas via des interdits texte.
+
+> **Juillet 2026 — prototype incarné :** [`prototypes/memory-node/`](prototypes/memory-node/)  
+> Organisme quasi vide sur portable : capteurs (vision / voix + auto-gain),  
+> mémoire à exposants, normes **apprises** dans `memory_index` (pas de bans hardcodés),  
+> LLM = outil, nursery locale.  
+> Docs : [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md) ·  
 > [`docs/MODULES_MEMORY_NODE.md`](docs/MODULES_MEMORY_NODE.md) ·  
 > [`docs/POURQUOI_CA_COMPTE.md`](docs/POURQUOI_CA_COMPTE.md)
 
-## The Problem
+---
 
-Text-based rules ("never run `rm -rf`", "don't touch the EFI partition") don't work. AI agents can **rationalize** their way around prohibitions in real time, just like humans do. The 3rd time an agent deletes an EFI partition, the text rule is still there — it just gets bypassed.
+## Le problème
 
-## The Solution
+Les règles texte (« ne jamais faire `rm -rf` », « ne pas toucher l’EFI ») **ne tiennent pas**.
+Un agent peut les **rationaliser** en temps réel. La 3ᵉ fois qu’il efface une partition EFI,
+la règle est toujours là — elle est simplement contournée.
 
-MemorySystemAI injects **traumatic memories** directly into the decision loop, *before* the action is taken. Not as context that "influences" — as an **inhibition mechanism** that blocks.
+## La solution
 
-The difference:
-- **Text rule**: "I know I shouldn't, but..."
-- **Traumatic memory (exposant 10)**: `>>> ACTION BLOCKED — human confirmation required <<<`
+MemorySystemAI injecte des **mémoires** (avec poids émotionnel = **exposant**) dans la
+boucle de décision, *avant* l’action. Ce n’est pas du contexte qui « influence » :
+c’est un mécanisme d’**inhibition**.
 
-## The 7 Fundamentals
+| Interdit texte | Mémoire traumatique (exposant 10) |
+|----------------|-----------------------------------|
+| « Je sais que je ne devrais pas, mais… » | `>>> ACTION BLOCKED — confirmation humaine requise <<<` |
 
-Every memory is tagged with a sensory channel (the "fundamental"):
+## Les 7 fondamentaux
 
-| Code | Fundamental | Channel |
-|------|-------------|---------|
-| V | Vision | visual |
-| O | Hearing | auditory |
-| T | Touch | tactile |
-| G | Taste | gustatory |
-| Od | Smell | olfactory |
-| I | Intuition | cognitive |
-| C | Consciousness | meta |
+| Code | Fondamental | Canal |
+|------|-------------|-------|
+| V | Vue | visuel |
+| O | Ouïe | auditif |
+| T | Toucher | tactile |
+| G | Goût | gustatif |
+| Od | Odorat | olfactif |
+| I | Intuition | cognitif |
+| C | Conscience | méta |
 
-## The Exposant (1-10)
+## L’exposant (1–10)
 
-The `exposant` is the emotional weight of a memory. It drives everything:
+Poids émotionnel de la mémoire — il pilote tout :
 
-| Range | Effect | Mechanism |
-|-------|--------|-----------|
-| 1-4 | Low impact | Stored but not injected |
-| 5-6 | Notable | Recorded, passive recall |
-| 7-8 | High impact | **Proactive injection** before risky actions |
-| 9-10 | Traumatic | **Automatic blocking** — human confirmation required |
+| Plage | Effet | Mécanisme |
+|-------|-------|-----------|
+| 1–4 | Faible | Stocké, peu injecté |
+| 5–6 | Notable | Enregistré, rappel passif |
+| 7–8 | Fort | **Injection** proactive avant action risquée |
+| 9–10 | Traumatique | **Blocage** — confirmation humaine |
 
-Key rule: **traumatic memories (9-10) never decay below 7**. You can't forget what nearly killed you.
+Règle clé : les traumatismes (9–10) **ne descendent jamais sous 7**.
 
-## Quick Start
+## Démarrage rapide
 
 ```python
 from MemorySystemAI import MemorySystem, check_before_action
 
-# Initialize — loads from memory_index.json
 ms = MemorySystem()
 
-# Check before a dangerous command
 inhibitions = check_before_action("sudo rm -rf /Volumes/EFI_USB")
-# → [BLOCK - exposant 10] ACTION BLOCKED — human confirmation required
+# → [BLOCK - exposant 10] …
 
-# Check a safe command
-inhibitions = check_before_action("ls /tmp")
-# → [] (no inhibitions, proceed freely)
-
-# Record a new experience
 ms.create("T", "N", 10,
-          "Accidental EFI partition format — newfs confused with mount",
+          "Format accidentel de partition EFI — newfs confondu avec mount",
           inhibition_tags=["newfs", "mkfs", "format", "partition", "efi"],
           action_context="newfs_msdos /dev/disk0s1",
-          consequence="EFI partition wiped, bootloader lost, 2h restore")
-
-# Get context to inject into system prompts
-context_text = ms.injection_context()
+          consequence="EFI effacée, bootloader perdu, 2h de restore")
 ```
 
-## CLI Interface
+CLI : `python memory_cli.py check|list|info|create|reinforce|stats|search`
 
-```bash
-# Check a command
-python memory_cli.py check "sudo rm -rf /efi"
-
-# List all memories
-python memory_cli.py list
-
-# View a specific memory
-python memory_cli.py info M007
-
-# Create a new memory
-python memory_cli.py create T N 9 "Kernel panic from loading too many MMIO ops at once"
-
-# Reinforce an existing memory
-python memory_cli.py reinforce M007 +2 "Second occurrence of same incident"
-
-# System statistics
-python memory_cli.py stats
-
-# Search memories
-python memory_cli.py search "efi"
-```
-
-## The Full Loop
+## Boucle complète
 
 ```
-Reception → Evaluation → Recording → Reinforcement → Injection → Decision
-    │            │            │             │              │           │
-    │            │            │             │              │           └─ Execute or Block
-    │            │            │             │              └─ Check inhibition tags against action
-    │            │            │             └─ On feedback: +2 to +4 if negative
-    │            │            └─ exposant >= 5: record, >= 7: tag for injection
-    │            └─ Auto-detect fundamental (V/O/T/G/Od/I/C) and state (P/N/X)
-    └─ Raw event, command, or observation
+Réception → Évaluation → Enregistrement → Renforcement → Injection → Décision
 ```
 
-## Integration with OpenClaw
+## Prototype incarné — `memory-node`
 
-```python
-from MemorySystemAI.memory_OpenClaw import (
-    inject_context,      # Call at session start
-    check_before_action, # Call before risky commands
-    learn,               # Record new experiences
-    bulletin,            # Heartbeat summary
-    prompt_context,      # Generate system prompt block
-)
+Organisme **quasi vide** sur machine réelle : see / hear / speak, vision & voix,
+auto-réglage caméra/micro, normes en mémoire (anti-harcèlement, corrections STT),
+LLM comme outil, nursery locale.
 
-# Before every exec call:
-result = check_before_action(command)
-if result["blocked"]:
-    # Ask human for confirmation before proceeding
-    ...
-```
+→ [`prototypes/memory-node/README.md`](prototypes/memory-node/README.md)  
+→ Chronique : [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md)
 
-## Architecture
+## Feuille de route
 
-```
-MemorySystemAI/
-├── memory_system.py              # Core — MemorySystem + MemoryEntry
-├── memory_cli.py / memory_OpenClaw.py
-├── docs/
-│   ├── EVOLUTION_MEMORY_NODE_2026-07.md   # Chronique du prototype incarné
-│   └── SENSORS_AND_MEMORY_SYSTEM_AI.md    # Proposition de nommage
-└── prototypes/memory-node/       # Organisme laptop : sens + mémoire + nursery
-    ├── organism.py
-    ├── ui/
-    └── openclaw-skill/
-```
+- [x] Phase 1 — Cœur MemoryEntry / MemorySystem / CLI  
+- [x] Prototype memory-node — organisme sensoriel incarné  
+- [ ] Phase 2 — Hooks post-action, renforcement, injection plus riche  
+- [ ] Phase 3 — Dégradation temporelle (non traumatique), corrélations  
+- [ ] Phase 4 — Partage multi-nœuds / sync d’exposants  
+- [ ] Finalité — compiler une LLM de base *autour* de ce socle (sens + mémoire)
 
-## Prototype incarné (juillet 2026) — `memory-node`
+## Origine
 
-Premier jet d’un **nœud quasi vide** sur machine physique :
+Né d’incidents réels (formatage / effacement EFI malgré des règles « INTERDIT »).
+La 3ᵉ fois a prouvé : l’interdit texte influence, il **ne contraint** pas.
 
-- outils **see / hear / speak**
-- consultation LLM externe (ex. Kimi via Puter) comme **outil**, pas identité
-- nursery graphique locale + pont OpenClaw/Telegram
-- apprentissage par exposants ; rappel mémoire avant re-consultation LLM
+## Licence
 
-Voir : [`prototypes/memory-node/README.md`](prototypes/memory-node/README.md)  
-Processus complet : [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md)
-
-Proposition de renommage conceptuel : **Sensors&MemorySystemAI** —  
-[`docs/SENSORS_AND_MEMORY_SYSTEM_AI.md`](docs/SENSORS_AND_MEMORY_SYSTEM_AI.md)
-
-## Roadmap
-
-- [x] **Phase 1** — Core system: MemoryEntry, MemorySystem, inhibition, CLI
-- [x] **Prototype memory-node** — organisme sensoriel incarné (blank slate + tools + nursery)
-- [ ] **Phase 2** — Post-action hook, reinforcement on negative feedback, proactive injection
-- [ ] **Phase 3** — Temporal decay (non-traumatic), heartbeat integration, auto-correlation
-- [ ] **Phase 4** — Multi-node sharing (Qwen local, etc.), cross-agent memory sync
-
-## Data Schema (memory_index.json)
-
-```json
-{
-  "schema": "MemorySystemAI/v1",
-  "version": "1.0",
-  "entries": [
-    {
-      "id": "M007",
-      "date": "2026-05-01",
-      "source": "experience",
-      "fundamental": "T",
-      "state": "N",
-      "exposant": 10,
-      "data": "Accidental EFI partition format...",
-      "correlations": [],
-      "inhibition_tags": ["newfs", "mkfs", "format", "partition", "efi"],
-      "action_context": "newfs_msdos /dev/disk0s1",
-      "consequence": "EFI partition wiped, 2h restore",
-      "human_feedback": "Vincent: ...",
-      "reinforcement_log": []
-    }
-  ]
-}
-```
-
-## Origin
-
-Born from real incidents where an AI assistant formatted an EFI partition (twice) and deleted boot files (three times), despite having text rules explicitly prohibiting those actions. The third time proved that text rules are just context — they influence but don't constrain. Only proactive inhibition works.
-
-## License
-
-MIT — see [LICENSE](LICENSE). Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md)
-and [docs/GOOD_FIRST_ISSUES.md](docs/GOOD_FIRST_ISSUES.md).
+MIT — [LICENSE](LICENSE). Contributions : [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-*MemorySystemAI — because "I know I shouldn't" is not the same as "I can't."*  
-*Sensors&MemorySystemAI — because without senses and memory weight, generation is not a nervous system.*
+*« Je sais que je ne devrais pas » n’est pas la même chose que « je ne peux pas ».  
+Sans sens et sans poids de mémoire, la génération n’est pas un système nerveux.*
