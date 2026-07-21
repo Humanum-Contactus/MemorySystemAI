@@ -376,6 +376,7 @@
             <button class="primary" id="btnHear">Écouter</button>
             <button id="btnSee">Voir</button>
             <button id="btnExplore" title="Exploration autonome (mémoire + exposants)">Explorer</button>
+            <button id="btnHearSelf" title="Parler puis s'écouter (auto-correction)">S'écouter</button>
             <button id="btnSpeakLast">Relire</button>
             <button class="warn" id="btnVoice">Voix auto</button>
           </div>
@@ -502,10 +503,17 @@
           ? (" · cam b" + cam.brightness + "/g" + cam.gamma)
           : (st.camera ? " · caméra" : "");
         const ttsHint = (st.tts && st.tts.piper) ? " · piper" : "";
+        const bil = st.source_bilan || {};
+        const bilHint = (bil.total > 0)
+          ? (" · mem " + (bil.memory_pct || 0) + "% / llm " + (bil.llm_pct || 0) + "%")
+          : "";
+        const autoHint = (st.autonomy_loop && st.autonomy_loop.running)
+          ? ((st.autonomy_readiness && st.autonomy_readiness.ready) ? " · auto✓" : " · auto…")
+          : "";
         $("stats").textContent =
           (st.memories || 0) + " mémoires · " +
           (st.bootstrap_only_meta ? "ardoise méta" : "apprend") +
-          camHint + ttsHint + visHint;
+          camHint + ttsHint + visHint + bilHint + autoHint;
         $("clock").textContent = st.time || "";
         $("live").textContent = "en ligne";
         $("dot").style.background = "var(--ok)";
@@ -757,6 +765,33 @@
         await refresh();
       } catch (e) {
         showUtter("Erreur exploration: " + e.message);
+      } finally {
+        setBusy(false);
+      }
+    };
+
+    $("btnHearSelf").onclick = async () => {
+      if (busy) return;
+      setBusy(true);
+      const phrase = ($("msg").value || "").trim() || lastUtterance || "Bonjour, je m'écoute pour me corriger.";
+      showUtter("", "Je parle puis je m'écoute…");
+      pushLog("→ hear_self « " + phrase.slice(0, 80) + " »");
+      try {
+        const res = await api("/autonomy", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tool: "hear_self", text: phrase, play: true }),
+        });
+        const r = res.result || {};
+        const u = r.utterance || "(pas de retour)";
+        showUtter(u);
+        pushLog(
+          "← hear_self match=" + r.match + " ratio=" + r.ratio +
+          " entendu=« " + (r.heard || "").slice(0, 80) + " »"
+        );
+        await refresh();
+      } catch (e) {
+        showUtter("Erreur s'écouter: " + e.message);
       } finally {
         setBusy(false);
       }

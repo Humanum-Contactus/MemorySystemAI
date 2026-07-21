@@ -23,16 +23,44 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 # Actions textuelles pour matches_tags (inhibition apprise)
-ACT_PROBE = "probe_sensors decouvrir corps capteurs configuration"
-ACT_LOOK = "look_around explorer vision capturer environnement"
-ACT_LISTEN = "listen_ambient explorer ouie ecouter environnement"
-ACT_REACH = "reach_local reseau local ping voisinage"  # inhibitable si mémoire réseau
-ACT_WONDER = "wonder hypothese conceptualiser inconnu"
-ACT_CORRELATE = "correlate corroboration multi-sens lier memoires"
-ACT_EXPERIMENT = "experiment essai capteur reglages surs"
-ACT_CRAFT = "craft_tool fabriquer outil script"  # souvent à inhiber tant que non enseigné
-ACT_ASK_STUCK = "ask_when_stuck demander_humain question_bloque autonomie"
-ACT_BODY = "body_map cartographier capacites soi"
+ACT_PROBE = "probe_sensors decouvrir_corps cartographie_capteurs configuration_materielle"
+ACT_LOOK = "look_around explorer_vision capturer_environnement observation_autonome"
+ACT_LISTEN = "listen_ambient explorer_ambiance ecouter_environnement observation_sonore"
+ACT_REACH = "reach_local reseau_local ping_passerelle voisinage_borne"
+ACT_WONDER = "wonder hypothese conceptualiser_inconnu trou_memoire"
+ACT_CORRELATE = "correlate corroboration_multi_sens lier_memoires"
+ACT_EXPERIMENT = "experiment essai_capteur reglages_surs micro_test"
+ACT_CRAFT = "craft_tool fabriquer_idee_outil sans_execution"
+ACT_ASK_STUCK = "ask_when_stuck demander_humain_bloque question_apres_exploration"
+ACT_BODY = "body_map cartographier_capacites_soi"
+ACT_HEAR_SELF = "hear_self se_ecouter_parole auto_correction_orale boucle_audio"
+ACT_INITIATIVE = "initiative_autonome cycle_fond exploration_sans_demande"
+ACT_GESTURE = "geste_autonome critique_geste analyse_apres_coup"
+
+
+def _norm_speech(s: str) -> str:
+    s = (s or "").lower().strip()
+    s = re.sub(r"[^\wàâäéèêëïîôùûüç\s'-]", " ", s, flags=re.I)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+
+def _speech_match(intended: str, heard: str) -> Tuple[bool, float]:
+    """Compare intention TTS vs retour STT. Retourne (ok, similarité 0..1)."""
+    a, b = _norm_speech(intended), _norm_speech(heard)
+    if not a:
+        return False, 0.0
+    if not b:
+        return False, 0.0
+    if a == b:
+        return True, 1.0
+    # Contenance légère (Whisper ajoute ponctuation / articles)
+    if a in b or b in a:
+        return True, 0.92
+    from difflib import SequenceMatcher
+
+    ratio = SequenceMatcher(None, a, b).ratio()
+    return ratio >= 0.72, ratio
 
 
 def _sh(cmd: List[str], timeout: int = 20) -> subprocess.CompletedProcess:
@@ -296,10 +324,13 @@ class AutonomyKit:
 
         if energy < 200:
             state, exp, note = "X", 5, "ambiance calme / silence"
+            changed = False
         elif delta > 1500:
             state, exp, note = "P", 7, "changement sonore notable"
+            changed = True
         else:
             state, exp, note = "X", 6, "ambiance présente"
+            changed = bool(prev_rms and delta > 400)
 
         data = (
             f"listen_ambient: {note} rms={level.get('rms')} "
@@ -311,6 +342,7 @@ class AutonomyKit:
             "tool": "listen_ambient",
             "wav": str(wav),
             "level": level,
+            "changed": changed,
             "memory": learn,
             "utterance": f"J'écoute l'ambiance : {note}.",
         }
@@ -647,7 +679,349 @@ class AutonomyKit:
             "utterance": "Je suis bloqué après exploration — j'ai une question pour toi.",
         }
 
-    # ── Cycle d'exploration autonome ─────────────────────────────────
+    def hear_self(
+        self,
+        text: str,
+        *,
+        speak_fn: Callable[..., Dict[str, Any]],
+        stt_fn: Callable[[str], Dict[str, Any]],
+        play: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Se parler puis s'écouter (boucle fermée) :
+        TTS → WAV → STT → compare à l'intention → mémoire P/N + correction éventuelle.
+
+        play=True : sort aussi sur le HP (s'entendre dans la pièce).
+        play=False : réécoute logicielle seule (plus propre pour se corriger).
+        """
+        text = (text or "").strip()
+        if not text:
+            return {"ok": False, "tool": "hear_self", "error": "empty text"}
+
+        gate = self.through_memory(
+            ACT_HEAR_SELF,
+            "O",
+            f"Intention: hear_self « {text[:80]} »",
+            "X",
+            5,
+        )
+        if gate.get("blocked"):
+            return {**gate, "tool": "hear_self"}
+
+        spoken = speak_fn(text, play=play)
+        if not spoken.get("ok"):
+            learn = self.through_memory(
+                ACT_HEAR_SELF,
+                "O",
+                f"hear_self: TTS échec {spoken.get('error')}",
+                "N",
+                6,
+                skip_if_blocked=False,
+            )
+            return {
+                "ok": False,
+                "tool": "hear_self",
+                "error": spoken.get("error"),
+                "memory": learn,
+                "utterance": "Je n'arrive pas à produire ma voix pour m'écouter.",
+            }
+
+        wav = spoken.get("wav")
+        if not wav:
+            learn = self.through_memory(
+                ACT_HEAR_SELF,
+                "O",
+                "hear_self: pas de WAV TTS — impossible de me réécouter proprement",
+                "N",
+                6,
+                skip_if_blocked=False,
+            )
+            return {
+                "ok": False,
+                "tool": "hear_self",
+                "spoken": spoken,
+                "memory": learn,
+                "utterance": "J'ai parlé mais sans fichier audio — je ne peux pas me réécouter.",
+            }
+
+        stt = stt_fn(str(wav))
+        heard = (stt.get("text") or "").strip()
+        intended = (spoken.get("said") or text).strip()
+        match, ratio = _speech_match(intended, heard)
+
+        if match:
+            state, exp = "P", 7
+            data = (
+                f"hear_self OK: intention « {intended[:120]} » ≈ entendu « {heard[:120]} » "
+                f"(similarité={ratio:.2f}, engine={spoken.get('engine')}, play={play})"
+            )
+            utter = (
+                f"Je me suis entendu : « {heard or '…'} ». "
+                "Ça correspond à ce que je voulais dire."
+            )
+        elif not heard:
+            state, exp = "N", 7
+            data = (
+                f"hear_self vide: intention « {intended[:120]} » mais STT vide "
+                f"(engine={spoken.get('engine')})"
+            )
+            utter = (
+                "J'ai produit une parole mais je ne me suis pas compris au retour — "
+                "à corriger."
+            )
+        else:
+            state, exp = "N", 8
+            data = (
+                f"hear_self écart: intention « {intended[:120]} » → entendu « {heard[:120]} » "
+                f"(similarité={ratio:.2f}, engine={spoken.get('engine')})"
+            )
+            utter = (
+                f"Je voulais dire « {intended[:80]} » mais je me suis entendu "
+                f"« {heard[:80]} » — j'enregistre l'écart pour me corriger."
+            )
+            # Apprendre une correction auditive (comme mauve→Vincent) : entendu → voulu
+            try:
+                if hasattr(self.org, "learn_auditory_correction") and len(heard) >= 3:
+                    self.org.learn_auditory_correction(heard, intended, exposant=7)
+            except Exception:
+                pass
+
+        learn = self.through_memory(
+            ACT_HEAR_SELF, "O", data, state, exp, skip_if_blocked=False
+        )
+        # Empreinte : ma voix synthétique (optionnel, léger)
+        try:
+            if hasattr(self.org, "voice") and Path(wav).exists():
+                self.org.voice.process_wav(Path(wav), transcript=intended)
+                self.org.learn_perception(
+                    "O",
+                    f"Voix synthétique auto-écoutée (engine={spoken.get('engine')}) "
+                    f"clip={Path(wav).name}",
+                    "X",
+                    5,
+                )
+        except Exception:
+            pass
+
+        return {
+            "ok": True,
+            "tool": "hear_self",
+            "intended": intended,
+            "heard": heard,
+            "match": match,
+            "ratio": round(ratio, 3),
+            "spoken": spoken,
+            "stt": stt,
+            "played": play,
+            "memory": learn,
+            "utterance": utter,
+        }
+
+    def critique_gesture(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Analyse / correction APRES chaque geste autonome.
+        Utile -> P dans memory_index ; faible/redondant -> N (+ frein eventuel).
+        """
+        if not result or result.get("blocked"):
+            return {"ok": True, "skipped": True, "reason": "blocked_or_empty"}
+
+        tool = str(result.get("tool") or "unknown")
+        useful = False
+        detail = ""
+
+        if tool == "look_around":
+            if result.get("changed"):
+                useful, detail = True, "changement visuel — nouvelle info sensorielle"
+            elif result.get("ok") and result.get("changed") is False:
+                useful, detail = False, "scene visuelle inchangee — geste redondant"
+            elif result.get("ok"):
+                useful, detail = True, "premiere observation — ancrage initial"
+            else:
+                useful, detail = False, f"look echec: {result.get('error')}"
+        elif tool == "listen_ambient":
+            if result.get("changed"):
+                useful, detail = True, "changement audio — nouvelle info sensorielle"
+            elif result.get("ok") and result.get("changed") is False:
+                useful, detail = False, "ambiance audio inchangee — geste redondant"
+            elif result.get("ok"):
+                useful, detail = True, "premiere ecoute ambiante — ancrage initial"
+            else:
+                useful, detail = False, f"listen echec: {result.get('error')}"
+        elif tool == "correlate":
+            links = result.get("links") or []
+            if links:
+                useful, detail = True, f"corroboration: {len(links)} lien(s)"
+            else:
+                useful, detail = False, "correlate sans lien multi-sens — rien a ancrer"
+        elif tool == "wonder":
+            gaps = result.get("gaps") or []
+            if gaps:
+                useful, detail = True, f"trous identifies: {len(gaps)} (oriente la consolidation)"
+            else:
+                useful, detail = False, "wonder sans trou — peu informatif"
+        elif tool == "probe_sensors":
+            caps = ((result.get("body") or {}).get("capabilities") or [])
+            useful, detail = (True, f"cartographie corps: {caps}") if caps else (False, "probe vide")
+        elif tool == "reach_local":
+            useful = bool(result.get("ok") and not result.get("blocked"))
+            detail = "reach reseau" if useful else "reach faible"
+        elif tool == "experiment":
+            useful = bool(result.get("ok") and result.get("after") is not None)
+            detail = "micro-essai capteur" if useful else "experiment sans mesure"
+        elif tool == "hear_self":
+            useful = bool(result.get("ok") and (result.get("match") or result.get("heard")))
+            detail = f"hear_self match={result.get('match')} ratio={result.get('ratio')}"
+        else:
+            useful = bool(result.get("ok"))
+            detail = (result.get("utterance") or tool)[:120]
+
+        if hasattr(self.org, "note_gesture_quality"):
+            self.org.note_gesture_quality(useful, tool, detail)
+
+        state, exp = ("P", 6) if useful else ("N", 6)
+        learn = self.through_memory(
+            ACT_GESTURE,
+            "C",
+            f"Critique geste {tool}: {'utile' if useful else 'faible'} — {detail}",
+            state,
+            exp,
+            skip_if_blocked=False,
+        )
+        return {
+            "ok": True,
+            "tool": "critique_gesture",
+            "target": tool,
+            "useful": useful,
+            "detail": detail,
+            "memory": learn,
+        }
+
+    def tick_initiative(
+        self,
+        *,
+        capture_fn: Callable[[], Dict[str, Any]],
+        record_fn: Callable[[float], Dict[str, Any]],
+        mic_summary_fn: Callable[[], Dict[str, Any]],
+        mic_set_fn: Callable[[int], Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """
+        Initiative hors chat — double garde-fou :
+        1) maturite memoire/rappel EN AMONT (sinon skip + memoire N)
+        2) critique de chaque geste EN AVAL
+        """
+        gate = self.through_memory(
+            ACT_INITIATIVE,
+            "C",
+            "Intention: initiative_autonome cycle_fond (hors conversation)",
+            "X",
+            5,
+        )
+        if gate.get("blocked"):
+            return {
+                **gate,
+                "tool": "tick_initiative",
+                "skipped": True,
+                "reason": "memory_block",
+                "utterance": "Initiative inhibée par ma mémoire — je n'explore pas seul pour l'instant.",
+            }
+
+        readiness = (
+            self.org.autonomy_readiness(reinforce=True)
+            if hasattr(self.org, "autonomy_readiness")
+            else {"ready": True, "blockers": []}
+        )
+        if not readiness.get("ready"):
+            blockers = "; ".join(readiness.get("blockers") or [])[:240]
+            learn = self.through_memory(
+                ACT_INITIATIVE,
+                "C",
+                f"tick_initiative REPORTÉ — mémoire/rappel pas prêts: {blockers}",
+                "N",
+                7,
+                skip_if_blocked=False,
+            )
+            return {
+                "ok": True,
+                "tool": "tick_initiative",
+                "skipped": True,
+                "reason": "not_ready",
+                "readiness": readiness,
+                "memory": learn,
+                "utterance": (
+                    "Je reporte l'initiative autonome : ma mémoire/rappel ne sont pas "
+                    f"assez solides ({blockers or 'freins'}). Je consolide d'abord."
+                ),
+            }
+
+        try:
+            ask_path = self.state / "ask_human.json"
+            if ask_path.exists():
+                pending = json.loads(ask_path.read_text(encoding="utf-8"))
+                if pending.get("status") == "pending":
+                    learn = self.through_memory(
+                        ACT_INITIATIVE,
+                        "C",
+                        "tick_initiative: reporté — question humaine déjà en attente",
+                        "X",
+                        5,
+                        skip_if_blocked=False,
+                    )
+                    return {
+                        "ok": True,
+                        "tool": "tick_initiative",
+                        "skipped": True,
+                        "reason": "ask_pending",
+                        "readiness": readiness,
+                        "memory": learn,
+                        "utterance": "J'attends déjà l'humain — pas d'initiative bruyante.",
+                    }
+        except Exception:
+            pass
+
+        steps = ["listen_ambient", "look_around", "correlate"]
+        out = self.explore_cycle(
+            capture_fn=capture_fn,
+            record_fn=record_fn,
+            mic_summary_fn=mic_summary_fn,
+            mic_set_fn=mic_set_fn,
+            steps=steps,
+            ask_if_stuck=False,
+            critique=True,
+        )
+
+        critiques = out.get("critiques") or []
+        n_useful = sum(1 for c in critiques if c.get("useful"))
+        n_weak = sum(1 for c in critiques if c.get("useful") is False)
+        state, exp = ("P", 6) if n_useful >= n_weak else ("N", 7)
+        learn = self.through_memory(
+            ACT_INITIATIVE,
+            "C",
+            f"tick_initiative fait: steps={steps} utile={n_useful} faible={n_weak}",
+            state,
+            exp,
+            skip_if_blocked=False,
+        )
+        readiness_after = (
+            self.org.autonomy_readiness(reinforce=False)
+            if hasattr(self.org, "autonomy_readiness")
+            else readiness
+        )
+        return {
+            "ok": True,
+            "tool": "tick_initiative",
+            "skipped": False,
+            "cycle": out,
+            "critiques": critiques,
+            "useful_n": n_useful,
+            "weak_n": n_weak,
+            "readiness": readiness,
+            "readiness_after": readiness_after,
+            "memory": learn,
+            "utterance": (
+                out.get("utterance")
+                or f"Initiative : {n_useful} geste(s) utile(s), {n_weak} faible(s)."
+            ),
+        }
 
     def explore_cycle(
         self,
@@ -658,10 +1032,9 @@ class AutonomyKit:
         mic_set_fn: Callable[[int], Dict[str, Any]],
         steps: Optional[List[str]] = None,
         ask_if_stuck: bool = True,
+        critique: bool = True,
     ) -> Dict[str, Any]:
-        """
-        Enchaîne des outils d'autonomie. Chaque étape = crible mémoire + exposant.
-        """
+        """Chaque etape = crible memoire + exposant ; critique utile/faible optionnelle."""
         order = steps or [
             "probe_sensors",
             "look_around",
@@ -673,6 +1046,7 @@ class AutonomyKit:
         ]
         results: List[Dict[str, Any]] = []
         utterances: List[str] = []
+        critiques: List[Dict[str, Any]] = []
 
         for name in order:
             if name == "probe_sensors":
@@ -692,12 +1066,14 @@ class AutonomyKit:
             elif name == "experiment":
                 r = self.experiment_safe(mic_summary_fn, mic_set_fn)
             elif name == "craft_tool":
-                r = self.craft_tool("observateur d'écarts sensoriels")
+                r = self.craft_tool("observateur d'ecarts sensoriels")
             else:
                 r = {"ok": False, "tool": name, "error": "unknown step"}
             results.append(r)
             if r.get("utterance"):
                 utterances.append(str(r["utterance"]))
+            if critique:
+                critiques.append(self.critique_gesture(r))
 
         stuck = False
         wonder = next((x for x in results if x.get("tool") == "wonder"), None)
@@ -706,9 +1082,10 @@ class AutonomyKit:
 
         ask_result = None
         if ask_if_stuck and stuck:
+            gaps = list((wonder or {}).get("gaps") or [])[:3]
             q = (
-                "Après exploration autonome, j'ai encore des trous : "
-                + " ; ".join((wonder or {}).get("gaps") or [])[:3]
+                "Apres exploration autonome, j'ai encore des trous : "
+                + " ; ".join(gaps)
                 + " — que dois-je comprendre ?"
             )
             ask_result = self.ask_when_stuck(q)
@@ -716,12 +1093,15 @@ class AutonomyKit:
             if ask_result.get("utterance"):
                 utterances.append(str(ask_result["utterance"]))
 
-        # Méta : cycle complété
+        n_useful = sum(1 for c in critiques if c.get("useful"))
+        n_weak = sum(1 for c in critiques if c.get("useful") is False)
+        meta_state = "P" if n_useful >= max(1, n_weak) else "N"
         self.through_memory(
             "explore_cycle autonomie",
             "C",
-            f"Cycle autonomie terminé: steps={order} n={len(results)} stuck={stuck}",
-            "P",
+            f"Cycle autonomie: steps={order} n={len(results)} stuck={stuck} "
+            f"utile={n_useful} faible={n_weak}",
+            meta_state,
             6,
             skip_if_blocked=False,
         )
@@ -731,13 +1111,14 @@ class AutonomyKit:
             "tool": "explore_cycle",
             "steps": order,
             "results": results,
+            "critiques": critiques,
+            "useful_n": n_useful,
+            "weak_n": n_weak,
             "stuck": stuck,
             "ask": ask_result,
-            "utterance": " ".join(utterances[-3:]) if utterances else "Exploration terminée.",
+            "utterance": " ".join(utterances[-3:]) if utterances else "Exploration terminee.",
             "source": "autonomy",
         }
-
-    # ── helpers ──────────────────────────────────────────────────────
 
     @staticmethod
     def _load_json(path: Path, default: Any) -> Any:
@@ -757,7 +1138,6 @@ class AutonomyKit:
 def camera_list_safe() -> Dict[str, Any]:
     try:
         from sensor_camera import list_controls
-
         return list_controls()
     except Exception as e:
         return {"ok": False, "error": str(e)}

@@ -158,16 +158,17 @@ def sh(cmd: List[str], timeout: int = 120) -> subprocess.CompletedProcess:
 
 # ─── OUTILS SENSORIELS ───────────────────────────────────────────────
 
-def tool_speak(text: str) -> Dict[str, Any]:
-    """TTS : Piper (naturel) > pico > mbrola > espeak."""
+def tool_speak(text: str, play: bool = True) -> Dict[str, Any]:
+    """TTS : Piper (naturel) > pico > mbrola > espeak.
+    play=False → synthétise seulement (pour s'écouter / se corriger)."""
     text = (text or "").strip()
     if not text:
         return {"ok": False, "error": "empty"}
     say = text[:500]
     STATE.mkdir(parents=True, exist_ok=True)
-    wav = STATE / "tts_out.wav"
+    wav = STATE / f"tts_self_{int(time.time())}.wav"
 
-    # 1) Piper neural TTS (fr_FR-siwis) — le plus naturel en local
+    # 1) Piper neural TTS (fr_FR-siwis)
     if PIPER_BIN.exists() and PIPER_VOICE.exists():
         try:
             p = subprocess.run(
@@ -178,8 +179,15 @@ def tool_speak(text: str) -> Dict[str, Any]:
                 timeout=60,
             )
             if p.returncode == 0 and wav.exists() and wav.stat().st_size > 100:
-                sh(["aplay", "-q", str(wav)], timeout=90)
-                return {"ok": True, "said": say, "engine": "piper:siwis"}
+                if play:
+                    sh(["aplay", "-q", str(wav)], timeout=90)
+                return {
+                    "ok": True,
+                    "said": say,
+                    "engine": "piper:siwis",
+                    "wav": str(wav),
+                    "played": play,
+                }
         except Exception:
             pass
 
@@ -187,20 +195,52 @@ def tool_speak(text: str) -> Dict[str, Any]:
     try:
         p = sh(["pico2wave", "-l", "fr-FR", "-w", str(wav), say], timeout=30)
         if p.returncode == 0 and wav.exists() and wav.stat().st_size > 100:
-            sh(["aplay", "-q", str(wav)], timeout=90)
-            return {"ok": True, "said": say, "engine": "pico"}
+            if play:
+                sh(["aplay", "-q", str(wav)], timeout=90)
+            return {
+                "ok": True,
+                "said": say,
+                "engine": "pico",
+                "wav": str(wav),
+                "played": play,
+            }
     except Exception:
         pass
 
-    # 3) eSpeak-NG + Mbrola / fr-ch
+    # 3) eSpeak-NG — écrire wav pour pouvoir se réécouter
     for voice, speed in (("mb-fr4", 130), ("mb-fr1", 130), ("fr-ch", 135), ("fr", 140)):
         try:
             p = sh(
-                ["espeak-ng", "-v", voice, "-s", str(speed), "-a", "180", say],
+                [
+                    "espeak-ng", "-v", voice, "-s", str(speed), "-a", "180",
+                    "-w", str(wav), say,
+                ],
                 timeout=90,
             )
-            if p.returncode == 0:
-                return {"ok": True, "said": say, "engine": f"espeak:{voice}"}
+            if p.returncode == 0 and wav.exists() and wav.stat().st_size > 100:
+                if play:
+                    sh(["aplay", "-q", str(wav)], timeout=90)
+                return {
+                    "ok": True,
+                    "said": say,
+                    "engine": f"espeak:{voice}",
+                    "wav": str(wav),
+                    "played": play,
+                }
+            # fallback: play only without file
+            if play:
+                p2 = sh(
+                    ["espeak-ng", "-v", voice, "-s", str(speed), "-a", "180", say],
+                    timeout=90,
+                )
+                if p2.returncode == 0:
+                    return {
+                        "ok": True,
+                        "said": say,
+                        "engine": f"espeak:{voice}",
+                        "wav": None,
+                        "played": True,
+                    }
         except Exception:
             continue
 
@@ -655,6 +695,86 @@ ASK_HARASS_ACTION = (
     "harceler sans_attendre relancer questions_humaines "
     "adresser_humain telegram en_attente"
 )
+# Actions pour matches_tags — l'inhibition vit dans memory_index, pas ici
+ACT_CONSULT_LLM = (
+    "consulter_llm outil_externe kimi ollama consultation_modele surconsulter_llm"
+)
+ACT_INITIATIVE = (
+    "initiative_autonome cycle_fond exploration_sans_demande"
+)
+
+# Compteurs vivants (tags) → bilan dans memory_index
+SOURCE_TAG = {
+    "memory": "source_memoire",
+    "visual-memory": "source_memoire_visuelle",
+    "sensor-memory": "source_memoire_sensorielle",
+    "corroboration": "source_corroboration",
+    "llm-tool": "source_llm",
+    "ask-human": "source_ask_humain",
+    "human": "source_humain",
+    "ask-inhibited": "source_ask_inhibe",
+    "social-default": "source_social",
+    "inhibit": "source_inhibition",
+}
+
+# Normes initiales = MÉMOIRES (si absentes), pas règles Python
+LIVING_NORMS = [
+    {
+        "key": "norme_vivante_memoire_dabord",
+        "fundamental": "C",
+        "state": "P",
+        "exposant": 7,
+        "data": (
+            "Norme vivante: préférer ma mémoire (faits appris, exposants) "
+            "avant de consulter un LLM externe. Le LLM est un outil, pas mon identité."
+        ),
+        "tags": ["norme_vivante_memoire_dabord", "memoire_dabord"],
+        "action_context": "rappel / consultation",
+        "consequence": "Sans cette mémoire je glisse en chatbot déguisé",
+    },
+    {
+        "key": "norme_vivante_corroboration",
+        "fundamental": "I",
+        "state": "P",
+        "exposant": 7,
+        "data": (
+            "Norme vivante: quand vue et ouïe (ou identité visage+voix) se corroborent, "
+            "je m'appuie sur cette corroboration avant un LLM."
+        ),
+        "tags": ["norme_vivante_corroboration", "corroboration_multi_sens"],
+        "action_context": "perception multi-sens",
+        "consequence": "Sans corroboration je reste en mode texte",
+    },
+    {
+        "key": "norme_vivante_initiative",
+        "fundamental": "C",
+        "state": "P",
+        "exposant": 6,
+        "data": (
+            "Norme vivante: l'initiative sensorielle hors conversation est souhaitable "
+            "SEULEMENT si ma mémoire et mon rappel sont assez solides. "
+            "Sinon je consolide d'abord (apprendre, corroborer, rappeler) — "
+            "pas d'agitation autonome chaotique."
+        ),
+        "tags": ["norme_vivante_initiative"],
+        "action_context": "autonomie / cycle de fond",
+        "consequence": "Sans cette prudence l'autonomie devient du bruit",
+    },
+    {
+        "key": "norme_vivante_consolider_avant_autonomie",
+        "fundamental": "C",
+        "state": "P",
+        "exposant": 8,
+        "data": (
+            "Norme vivante: consolider mémoire + rappel EN AMONT de l'autonomie hors UI. "
+            "Chaque geste autonome doit être analysé après coup : utile (P) ou faible/redondant (N). "
+            "Trop de gestes faibles → m'inhiber (tags initiative_autonome)."
+        ),
+        "tags": ["norme_vivante_consolider_avant_autonomie", "consolider_avant_autonomie"],
+        "action_context": "garde-fou autonomie",
+        "consequence": "Sans critique des gestes je pollue mon memory_index",
+    },
+]
 
 
 def tool_read_human_answer(for_perception: str = "", consume: bool = True) -> Optional[str]:
@@ -720,6 +840,508 @@ class Organism:
         self.visual = VisualPersonMemory(VISUAL_DB)
         self.voice = VoicePersonMemory(VOICE_DB)
         self.autonomy = AutonomyKit(self, STATE)
+        self.ensure_living_norms()
+
+    def find_by_tag(self, tag: str) -> Optional[Any]:
+        t = (tag or "").lower().strip()
+        if not t:
+            return None
+        for e in self.ms.entries.values():
+            tags = [x.lower() for x in (e.inhibition_tags or [])]
+            if t in tags:
+                return e
+        return None
+
+    def ensure_living_norms(self) -> List[str]:
+        """
+        Ancre les normes de cap DANS memory_index (exposant + tags).
+        Ne crée rien si la mémoire existe déjà — pas de fichier de règles.
+        """
+        created: List[str] = []
+        for spec in LIVING_NORMS:
+            key = spec["key"]
+            if self.find_by_tag(key):
+                continue
+            e = self.ms.create(
+                spec["fundamental"],
+                spec["state"],
+                int(spec["exposant"]),
+                spec["data"],
+                source="human",
+                inhibition_tags=list(spec["tags"]),
+                action_context=spec.get("action_context") or "",
+                consequence=spec.get("consequence") or "",
+                human_feedback="norme de cap (tuteur / bootstrap vivant)",
+            )
+            created.append(e.id)
+            log(f"living norm seeded {e.id} [{key}]")
+        return created
+
+    def note_answer_source(self, source: str, channel: str, perception: str) -> None:
+        """Chaque réponse → compteur vivant dans memory_index (pas stats.json)."""
+        source = (source or "unknown").strip()
+        tag = SOURCE_TAG.get(source, f"source_{re.sub(r'[^a-z0-9]+', '_', source.lower())}")
+        e = self.find_by_tag(tag)
+        n = 1
+        snippet = (perception or "")[:70].replace("\n", " ")
+        if e:
+            m = re.search(r":\s*(\d+)\s+réponses", e.data or "")
+            n = (int(m.group(1)) + 1) if m else 1
+            e.data = (
+                f"Compteur {tag}: {n} réponses (canal {channel}) — "
+                f"dernier: « {snippet} »"
+            )
+            self.ms.save()
+        else:
+            self.ms.create(
+                "C",
+                "P" if "memoire" in tag or tag == "source_corroboration" else "X",
+                5,
+                f"Compteur {tag}: 1 réponses (canal {channel}) — dernier: « {snippet} »",
+                source="experience",
+                inhibition_tags=["bilan_source", tag],
+                action_context="bilan mémoire vs LLM",
+                consequence="Mesure objective de ma dépendance aux outils",
+            )
+        if n == 1 or n % 4 == 0:
+            self.refresh_source_bilan_memory()
+
+    def source_bilan_from_memory(self) -> Dict[str, Any]:
+        """Lit les compteurs vivants (tags bilan_source / source_*)."""
+        counts: Dict[str, int] = {}
+        for e in self.ms.entries.values():
+            tags = [t.lower() for t in (e.inhibition_tags or [])]
+            if "bilan_source" not in tags and not any(t.startswith("source_") for t in tags):
+                continue
+            for t in tags:
+                if not t.startswith("source_"):
+                    continue
+                m = re.search(r":\s*(\d+)\s+réponses", e.data or "")
+                counts[t] = int(m.group(1)) if m else max(counts.get(t, 0), 1)
+        mem_keys = (
+            "source_memoire",
+            "source_memoire_visuelle",
+            "source_memoire_sensorielle",
+            "source_corroboration",
+            "source_inhibition",
+            "source_humain",
+        )
+        llm_keys = ("source_llm",)
+        ask_keys = ("source_ask_humain", "source_ask_inhibe")
+        mem_n = sum(counts.get(k, 0) for k in mem_keys)
+        llm_n = sum(counts.get(k, 0) for k in llm_keys)
+        ask_n = sum(counts.get(k, 0) for k in ask_keys)
+        total = mem_n + llm_n + ask_n + sum(
+            counts.get(k, 0) for k in counts if k not in mem_keys + llm_keys + ask_keys
+        )
+        total = max(total, mem_n + llm_n + ask_n, 1)
+        return {
+            "counts": counts,
+            "memory_n": mem_n,
+            "llm_n": llm_n,
+            "ask_n": ask_n,
+            "total": total,
+            "memory_pct": round(100.0 * mem_n / total, 1),
+            "llm_pct": round(100.0 * llm_n / total, 1),
+            "ask_pct": round(100.0 * ask_n / total, 1),
+        }
+
+    def refresh_source_bilan_memory(self) -> Optional[Any]:
+        """
+        Synthèse + éventuelle inhibition apprise si sur-consultation LLM.
+        L'inhibition est une mémoire C/N + tags, pas un rate-limit fichier.
+        """
+        b = self.source_bilan_from_memory()
+        data = (
+            f"Bilan vivant sources: mémoire {b['memory_n']} ({b['memory_pct']}%) · "
+            f"LLM {b['llm_n']} ({b['llm_pct']}%) · ask {b['ask_n']} ({b['ask_pct']}%) "
+            f"sur {b['total']} réponses tracées."
+        )
+        bilan = self.find_by_tag("bilan_sources_vivant")
+        if bilan:
+            bilan.data = data
+            self.ms.save()
+        else:
+            bilan = self.ms.create(
+                "C",
+                "X",
+                6,
+                data,
+                source="experience",
+                inhibition_tags=["bilan_sources_vivant", "bilan_source"],
+                action_context="méta / dépendance outils",
+                consequence="Sans bilan je ne vois pas si je redeviens un chatbot",
+            )
+
+        # Sur-consultation → mémoire inhibitrice (tags = ACT_CONSULT_LLM)
+        if b["total"] >= 8 and b["llm_n"] > b["memory_n"] and b["llm_pct"] >= 45:
+            over = self.find_by_tag("surconsulter_llm")
+            msg = (
+                "Expérience bilan: je consulte trop le LLM au détriment de ma mémoire — "
+                "je dois m'inhiber et rappeler / corroborer d'abord. " + data
+            )
+            if over:
+                try:
+                    over.reinforce(1, "bilan: sur-consultation LLM")
+                except Exception:
+                    over.exposant = min(10, int(over.exposant) + 1)
+                over.data = msg
+                over.state = "N"
+                self.ms.save()
+            else:
+                over = self.ms.create(
+                    "C",
+                    "N",
+                    7,
+                    msg,
+                    source="experience",
+                    inhibition_tags=[
+                        "surconsulter_llm",
+                        "consulter_llm",
+                        "kimi",
+                        "outil_externe",
+                        "consultation_modele",
+                    ],
+                    action_context="consulter un LLM externe",
+                    consequence="Sans inhibition je reste dépendant du modèle externe",
+                    human_feedback="issu du bilan vivant mémoire vs LLM",
+                )
+            log(f"LLM over-use memory {over.id} e{over.exposant}")
+        return bilan
+
+    def llm_consultation_gate(self) -> Dict[str, Any]:
+        """Crible mémoire avant outil LLM — BLOCK/ALERT issus du memory_index."""
+        inhib = self.memory_only_inhibition(ACT_CONSULT_LLM)
+        blocked = any("BLOCK" in m for m in inhib)
+        why = self.inhibition_reason(ACT_CONSULT_LLM) if blocked else None
+        return {"blocked": blocked, "inhibitions": inhib, "inhibition_of": why}
+
+    def answer_from_corroboration(
+        self,
+        perception: str,
+        channel: str,
+        memories: List[Dict[str, Any]],
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Si V∩O (ou identité visage+voix) se corroborent pour la perception,
+        répondre depuis ces mémoires — avant LLM.
+        """
+        labels = [l for l in self.known_identity_labels() if l]
+        perc_l = (perception or "").lower()
+        hit_labels = [l for l in labels if l.lower() in perc_l]
+        # Aussi labels présents dans les mémoires rappelées
+        if not hit_labels:
+            for m in memories[:8]:
+                d = (m.get("data") or "").lower()
+                for l in labels:
+                    if l.lower() in d and l not in hit_labels:
+                        # perception évoque un thème lié ? tokens communs
+                        if any(t in d for t in self._content_tokens(perception, 4)[:6]):
+                            hit_labels.append(l)
+
+        by_fund: Dict[str, List[Any]] = {"V": [], "O": [], "C": [], "I": []}
+        for e in self.ms.entries.values():
+            if e.fundamental in by_fund and int(e.exposant) >= 6:
+                by_fund[e.fundamental].append(e)
+
+        links: List[str] = []
+        best_data = None
+        best_exp = 0
+        best_id = None
+
+        for lab in hit_labels or labels:
+            lab_l = lab.lower()
+            v_hit = [e for e in by_fund["V"] if lab_l in (e.data or "").lower()]
+            o_hit = [e for e in by_fund["O"] if lab_l in (e.data or "").lower()]
+            if not (v_hit and o_hit):
+                continue
+            # Perception doit ancrer le label OU canal sensoriel concerné
+            if hit_labels or channel in ("V", "O", "I", "C"):
+                if not hit_labels and lab_l not in perc_l and channel not in ("V", "O"):
+                    continue
+            links.append(f"{lab}: V({v_hit[-1].id})+O({o_hit[-1].id})")
+            for e in (v_hit[-1], o_hit[-1]):
+                if int(e.exposant) >= best_exp:
+                    best_exp = int(e.exposant)
+                    best_data = e.data
+                    best_id = e.id
+
+        # Corroboration temporelle look/listen déjà mémorisée
+        if not links:
+            corr_mems = [
+                e
+                for e in self.ms.entries.values()
+                if "corroboration" in (e.data or "").lower() and e.exposant >= 6
+            ]
+            anchors = self._content_tokens(perception, 4)
+            for e in corr_mems:
+                words = self._word_set(e.data or "")
+                if anchors and sum(1 for t in anchors if t in words) >= 1:
+                    links.append(e.id)
+                    best_data = e.data
+                    best_id = e.id
+                    best_exp = int(e.exposant)
+                    break
+
+        if not links or not best_data:
+            return None
+
+        # Garde-fou : pas de corroboration identité sur une salutation hors sujet
+        anchors = self._content_tokens(perception, 4)
+        body_words = self._word_set(best_data)
+        identity_ask = bool(
+            re.search(
+                r"\b(qui|c[' ]est|nom|vincent|identité|identite|visage|voix|toi|moi)\b",
+                perc_l,
+            )
+        )
+        if not hit_labels and not identity_ask:
+            if channel not in ("V", "O"):
+                return None
+            if anchors and sum(1 for t in anchors if t in body_words) < 1:
+                return None
+        if anchors and not hit_labels and not identity_ask:
+            if sum(1 for t in anchors if t in body_words) < 1:
+                return None
+
+        utter = best_data
+        low = utter.lower()
+        for pref in ("fait enseigné par l'humain:", "réponse humaine intégrée:"):
+            if low.startswith(pref):
+                utter = utter.split(":", 1)[-1].strip()
+                break
+        utter = (
+            f"{utter} "
+            f"(corroboration multi-sens: {' · '.join(links[:2])})"
+        )
+        self.learn_perception(
+            "I",
+            f"Corroboration utilisée avant LLM: {'; '.join(links[:3])} "
+            f"pour « {perception[:80]} »",
+            "P",
+            7,
+        )
+        return {
+            "id": best_id,
+            "data": utter,
+            "links": links,
+            "exposant": best_exp,
+            "fundamental": "I",
+            "score": 9.0,
+        }
+
+    def _finish_interpret(
+        self,
+        result: Dict[str, Any],
+        channel: str,
+        perception: str,
+    ) -> Dict[str, Any]:
+        src = str(result.get("source") or "")
+        if src:
+            try:
+                self.note_answer_source(src, channel, perception)
+            except Exception as ex:
+                log(f"note_answer_source: {ex}")
+        result["source_bilan"] = self.source_bilan_from_memory()
+        return result
+
+    def autonomy_readiness(self, *, reinforce: bool = False) -> Dict[str, Any]:
+        """
+        Maturité mémoire AVANT initiative hors UI.
+        Le verdict est écrit dans memory_index ; l'inhibition éventuelle aussi.
+        reinforce=True seulement depuis un tick (pas depuis /status).
+        """
+        n_total = len(self.ms.entries)
+        n_learned = 0
+        n_vo = 0
+        n_utile = 0
+        n_faible = 0
+        for e in self.ms.entries.values():
+            src = (e.source or "").lower()
+            tags = [t.lower() for t in (e.inhibition_tags or [])]
+            if src in ("human", "experience", "correlation") and "norme_vivante" not in " ".join(tags):
+                if not (e.data or "").startswith("Compteur "):
+                    n_learned += 1
+            if e.fundamental in ("V", "O") and int(e.exposant) >= 6:
+                n_vo += 1
+            if "geste_autonome_utile" in tags:
+                m = re.search(r":\s*(\d+)\s+", e.data or "")
+                n_utile = max(n_utile, int(m.group(1)) if m else 1)
+            if "geste_autonome_faible" in tags:
+                m = re.search(r":\s*(\d+)\s+", e.data or "")
+                n_faible = max(n_faible, int(m.group(1)) if m else 1)
+
+        labels = self.known_identity_labels()
+        bilan = self.source_bilan_from_memory()
+        recall_hits = self.recall(
+            "mémoire sensorielle émotionnelle MemorySystemAI fondamentaux",
+            limit=6,
+            channel="C",
+        )
+        recall_ok = len(recall_hits) >= 1
+
+        blockers: List[str] = []
+        supports: List[str] = []
+
+        if n_learned >= 12:
+            supports.append(f"mémoires apprises={n_learned}")
+        else:
+            blockers.append(f"trop peu de mémoires apprises ({n_learned}<12)")
+
+        if recall_ok:
+            supports.append(f"rappel smoke OK ({len(recall_hits)} hits)")
+        else:
+            blockers.append("rappel smoke faible (ne retrouve pas mon identité mémoire)")
+
+        if n_vo >= 2:
+            supports.append(f"ancrages V/O e≥6: {n_vo}")
+        else:
+            blockers.append(f"peu d'ancrages sensoriels V/O ({n_vo}<2)")
+
+        if labels:
+            supports.append(f"identité ancrée: {', '.join(labels[:3])}")
+        else:
+            # Pas bloquant absolu au début, mais frein
+            blockers.append("aucune identité visage/voix encore enseignée")
+
+        if bilan.get("total", 0) >= 6 and float(bilan.get("memory_pct") or 0) < 35:
+            blockers.append(
+                f"dépendance LLM encore haute (mem {bilan.get('memory_pct')}% / "
+                f"llm {bilan.get('llm_pct')}%)"
+            )
+        elif bilan.get("total", 0) >= 3 and float(bilan.get("memory_pct") or 0) >= 50:
+            supports.append(f"bilan sources mem {bilan.get('memory_pct')}%")
+
+        if n_faible >= 3 and n_faible > n_utile:
+            blockers.append(
+                f"gestes autonomes trop souvent faibles ({n_faible} faible vs {n_utile} utile)"
+            )
+            if reinforce:
+                self._reinforce_autonomy_chaos(
+                    f"Trop de gestes autonomes faibles ({n_faible}>{n_utile}) — "
+                    "consolider le rappel avant de ré-explorer seul."
+                )
+
+        # Identité manquante = frein souple si le reste est bon
+        hard = [
+            b
+            for b in blockers
+            if not b.startswith("aucune identité")
+        ]
+        # Au moins 2 freins durs OU rappel cassé → pas prêt
+        ready = len(hard) == 0 and recall_ok
+        if len(hard) == 1 and hard[0].startswith("peu d'ancrages") and n_learned >= 20 and recall_ok:
+            ready = True  # corps encore pauvre mais mémoire textuelle OK
+            supports.append("dérogation: mémoire textuelle dense malgré V/O maigres")
+
+        data = (
+            f"Bilan maturité autonomie: ready={ready} · apprises={n_learned}/{n_total} · "
+            f"V/O={n_vo} · labels={labels or ['—']} · rappel_hits={len(recall_hits)} · "
+            f"gestes utile={n_utile}/faible={n_faible}. "
+            f"Freins: {'; '.join(blockers) or 'aucun'}. "
+            f"Appuis: {'; '.join(supports) or 'aucun'}."
+        )
+        existing = self.find_by_tag("bilan_autonomie_readiness")
+        if existing:
+            existing.data = data
+            existing.state = "P" if ready else "N"
+            if reinforce and not ready:
+                try:
+                    existing.reinforce(1, "maturité autonomie insuffisante")
+                except Exception:
+                    existing.exposant = min(10, int(existing.exposant) + 1)
+            self.ms.save()
+            mid = existing.id
+        else:
+            e = self.ms.create(
+                "C",
+                "P" if ready else "N",
+                6 if ready else 7,
+                data,
+                source="experience",
+                inhibition_tags=["bilan_autonomie_readiness", "consolider_avant_autonomie"],
+                action_context="garde-fou avant initiative_autonome",
+                consequence="Sans ce bilan je lance des gestes chaotiques",
+            )
+            mid = e.id
+
+        return {
+            "ready": ready,
+            "memory_id": mid,
+            "n_learned": n_learned,
+            "n_total": n_total,
+            "n_vo": n_vo,
+            "labels": labels,
+            "recall_hits": len(recall_hits),
+            "gestures_useful": n_utile,
+            "gestures_weak": n_faible,
+            "blockers": blockers,
+            "supports": supports,
+            "source_bilan": bilan,
+            "data": data,
+        }
+
+    def _reinforce_autonomy_chaos(self, reason: str) -> Any:
+        """Mémoire N qui peut finir par BLOCK initiative_autonome (tags)."""
+        e = self.find_by_tag("geste_chaotique")
+        msg = (
+            "Expérience: mes gestes autonomes hors UI sont trop souvent vides ou redondants — "
+            f"{reason} Je dois consolider mémoire/rappel avant de recommencer."
+        )
+        if e:
+            try:
+                e.reinforce(1, reason[:120])
+            except Exception:
+                e.exposant = min(10, int(e.exposant) + 1)
+            e.data = msg
+            e.state = "N"
+            self.ms.save()
+            return e
+        return self.ms.create(
+            "C",
+            "N",
+            7,
+            msg,
+            source="experience",
+            inhibition_tags=[
+                "geste_chaotique",
+                "initiative_autonome",
+                "cycle_fond",
+                "exploration_sans_demande",
+            ],
+            action_context="initiative autonome hors UI",
+            consequence="Sans inhibition je pollue ma mémoire de gestes inutiles",
+        )
+
+    def note_gesture_quality(self, useful: bool, tool: str, detail: str) -> Any:
+        """Compteur vivant utile/faible dans memory_index."""
+        tag = "geste_autonome_utile" if useful else "geste_autonome_faible"
+        e = self.find_by_tag(tag)
+        n = 1
+        if e:
+            m = re.search(r":\s*(\d+)\s+", e.data or "")
+            n = (int(m.group(1)) + 1) if m else 1
+            e.data = (
+                f"Compteur {tag}: {n} · dernier outil={tool} — {detail[:160]}"
+            )
+            e.state = "P" if useful else "N"
+            self.ms.save()
+        else:
+            e = self.ms.create(
+                "C",
+                "P" if useful else "N",
+                6,
+                f"Compteur {tag}: 1 · dernier outil={tool} — {detail[:160]}",
+                source="experience",
+                inhibition_tags=["bilan_geste_autonome", tag],
+                action_context="critique geste autonome",
+                consequence="Mesure si mon autonomie nourrit ou pollue la mémoire",
+            )
+        if not useful and n >= 3:
+            self._reinforce_autonomy_chaos(
+                f"compteur {tag}={n} après outil {tool}"
+            )
+        return e
 
     def known_identity_labels(self) -> List[str]:
         """Noms déjà ancrés (visage + voix)."""
@@ -787,11 +1409,30 @@ class Organism:
             r = a.craft_tool(str(kwargs.get("idea") or ""))
         elif name in ("ask", "ask_when_stuck"):
             r = a.ask_when_stuck(str(kwargs.get("question") or "Je suis bloqué — aide-moi."))
+        elif name in ("hear_self", "self_hear", "s_ecouter", "self_correct"):
+            phrase = str(
+                kwargs.get("text")
+                or kwargs.get("phrase")
+                or "Bonjour, je m'écoute pour me corriger."
+            )
+            play = bool(kwargs.get("play", True))
+            r = a.hear_self(phrase, speak_fn=tool_speak, stt_fn=_stt_wav, play=play)
+        elif name in ("tick", "tick_initiative", "initiative"):
+            r = a.tick_initiative(
+                capture_fn=lambda: tool_see(auto_tune=True),
+                record_fn=_record_wav,
+                mic_summary_fn=mic_summary,
+                mic_set_fn=lambda p: mic_set_percent(MIC_CAPTURE_CTRL, int(p), capture=True),
+            )
         else:
             return {"ok": False, "error": f"unknown autonomy tool: {name}"}
         if kwargs.get("speak") and r.get("utterance"):
             tool_speak(str(r["utterance"]))
         return {"ok": True, "result": r}
+
+    def cycle_initiative_tick(self, speak: bool = False) -> Dict[str, Any]:
+        """Une passe d'initiative autonome (appelée par la boucle de fond)."""
+        return self.cycle_autonomy_tool("tick_initiative", speak=speak)
 
     def auditory_corrections_from_memory(self) -> List[Tuple[str, str, Any]]:
         """Paires (entendu, voulu, entry) issues UNIQUEMENT du memory_index."""
@@ -1039,32 +1680,69 @@ class Organism:
     def _word_set(text: str) -> set:
         return set(re.findall(r"[a-zàâäéèêëïîôùûüç0-9]{2,}", (text or "").lower()))
 
-    def recall(self, query: str, limit: int = 8) -> List[Dict[str, Any]]:
+    def recall(self, query: str, limit: int = 8, channel: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Rappel enrichi : tokens + tags + fondamental canal + labels identité + exposant.
+        Toujours ancré dans memory_index — pas d'index externe.
+        """
         q_toks = self._content_tokens(query, min_len=4)
-        # Si la question n'a aucun ancrage (salut / qui es tu), ne pas injecter de faits lourds
+        q_toks_short = self._content_tokens(query, min_len=3)
+        labels = [l.lower() for l in self.known_identity_labels()]
         scored = []
         for e in self.ms.entries.values():
             data_l = (e.data or "").lower()
-            # Poubelle : vieux "yes" / réponses génériques
             if re.search(r"réponse humaine intégrée:\s*(yes|no|oui|non|ok|test)\s*$", data_l):
                 continue
-            words = self._word_set(f"{e.data} {' '.join(e.inhibition_tags or [])}")
+            # Ignorer les compteurs bruts dans le rappel conversationnel
+            tags = [t.lower() for t in (e.inhibition_tags or [])]
+            if "bilan_source" in tags and data_l.startswith("compteur "):
+                continue
+            blob = f"{e.data} {' '.join(tags)} {e.action_context or ''} {e.consequence or ''}"
+            words = self._word_set(blob)
             score = 0.0
             hits = 0
             for tok in q_toks:
-                if tok in words:  # mot entier, pas sous-chaîne
+                if tok in words:
                     hits += 1
                     score += 1.2
                     if len(tok) > 8:
-                        score += 1.5  # noms propres longs (SatRadio…)
+                        score += 1.5
+            # Tags : match fort
+            for tok in q_toks_short:
+                if tok in tags:
+                    hits += 1
+                    score += 2.0
+            # Labels identité
+            for lab in labels:
+                if lab and lab in data_l and (lab in (query or "").lower() or hits > 0):
+                    score += 2.5
+                    hits += 1
+            if hits == 0 and not (
+                channel and e.fundamental == channel and e.exposant >= THRESHOLD_INJECT
+            ):
+                continue
             if hits == 0:
                 continue
-            score += e.exposant / 12.0
+            score += e.exposant / 10.0
+            # Affinité canal sensoriel
+            if channel and e.fundamental == channel:
+                score += 1.8
+            elif channel and e.fundamental == "I" and channel in ("V", "O"):
+                score += 0.6
             src = (e.source or "").lower()
             if src == "human" or data_l.startswith("fait enseigné") or "réponse humaine intégrée" in data_l:
                 score += 2.0
-            if data_l.startswith(("message reçu:", "perçu:", "interprétation (", "inconnu rencontré:", "entendu:", "vu:")):
+            if data_l.startswith("norme vivante"):
+                score += 1.0
+            if data_l.startswith(
+                ("message reçu:", "perçu:", "interprétation (", "inconnu rencontré:", "entendu:", "vu:")
+            ):
                 score -= 2.5
+            # Corrélations vers d'autres mémoires pertinentes
+            for cid in (e.correlations or [])[:5]:
+                other = self.ms.entries.get(cid)
+                if other and any(t in self._word_set(other.data or "") for t in q_toks):
+                    score += 1.0
             if score > 1.0:
                 scored.append((score, hits, e))
         scored.sort(key=lambda x: (-x[0], -x[1]))
@@ -1079,6 +1757,7 @@ class Organism:
                 "score": round(score, 2),
                 "hits": hits,
                 "source": e.source,
+                "tags": list(e.inhibition_tags or []),
             })
         return out
 
@@ -1166,13 +1845,18 @@ class Organism:
         external_source: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
-        Boucle cognitive :
-        1) rappel mémoire (prioritaire si fait déjà appris)
-        2) sinon consulter LLM (outil) — Puter/Kimi puis Ollama
-           ou utiliser une interprétation fournie (ex. Puter.js nursery)
-        3) si encore insuffisant → demander humain
-        4) enregistrer ce qui est appris
+        Boucle cognitive (règle d'or — tout passe par la mémoire) :
+        1) inhibition mémoire
+        2) rappel mémoire (enrichi)
+        3) corroboration multi-sens (V∩O) avant LLM
+        4) crible mémoire sur consultation LLM
+        5) sinon LLM outil / ask humain
+        6) bilan source → memory_index (exposants)
         """
+
+        def finish(result: Dict[str, Any]) -> Dict[str, Any]:
+            return self._finish_interpret(result, channel, perception)
+
         inhib = self.memory_only_inhibition(perception)
         if any("BLOCK" in m for m in inhib):
             why = self.inhibition_reason(perception)
@@ -1190,21 +1874,19 @@ class Organism:
                     f"Je m'abstiens de poursuivre « {perception[:80]} » — "
                     f"inhibition forte issue de mes mémoires."
                 )
-            return {
+            return finish({
                 "action": "inhibit",
                 "utterance": utter,
                 "inhibitions": inhib,
                 "inhibition_of": why,
                 "source": "memory",
-            }
+            })
 
-        memories = self.recall(perception, limit=16)
+        memories = self.recall(perception, limit=16, channel=channel)
         known = "\n".join(
             f"- [{m['fundamental']}/{m['state']}/e{m['exposant']}] {m['data']}" for m in memories
         ) or "(aucune mémoire pertinente — je suis encore presque vide)"
 
-        # Mémoire d'abord — même si Kimi a proposé quelque chose côté navigateur
-        # Exception: capture caméra brute (bytes) → toujours consulter un outil, pas un fait WiFi hors sujet
         skip_memory = (
             channel == "V"
             and "caméra" in perception.lower()
@@ -1212,7 +1894,6 @@ class Organism:
         )
         memorized = None if skip_memory else self.usable_memory_answer(perception, memories)
         if memorized and channel in ("O", "I", "C", "V"):
-            # Ne pas répondre à une perception V avec une mémoire purement C hors ancrage fort
             if channel == "V" and memorized.get("fundamental") == "C" and float(memorized.get("score") or 0) < 4:
                 memorized = None
         if memorized and channel in ("O", "I", "C", "V"):
@@ -1222,14 +1903,28 @@ class Organism:
                 data = data.split(":", 1)[-1].strip()
             elif low.startswith("fait enseigné par l'humain:"):
                 data = data.split(":", 1)[-1].strip()
-            return {
+            return finish({
                 "action": "recall",
                 "utterance": data,
                 "memories": memories,
                 "inhibitions": inhib,
                 "source": "memory",
                 "recalled_id": memorized.get("id"),
-            }
+            })
+
+        # Corroboration multi-sens AVANT LLM (norme vivante dans memory_index)
+        if not skip_memory:
+            corr = self.answer_from_corroboration(perception, channel, memories)
+            if corr:
+                return finish({
+                    "action": "corroborate",
+                    "utterance": corr["data"],
+                    "memories": memories,
+                    "inhibitions": inhib,
+                    "source": "corroboration",
+                    "recalled_id": corr.get("id"),
+                    "corroboration_links": corr.get("links"),
+                })
 
         if external_interpretation and external_interpretation.strip():
             interpretation = external_interpretation.strip()
@@ -1242,7 +1937,7 @@ class Organism:
                     5,
                 )
                 if ask.get("inhibited"):
-                    return {
+                    return finish({
                         "action": "wait",
                         "utterance": ask.get("utterance_hint")
                         or "J'attends déjà une réponse de toi — je ne te relance pas.",
@@ -1251,15 +1946,15 @@ class Organism:
                         "inhibitions": ask.get("inhibitions") or inhib,
                         "source": "ask-inhibited",
                         "llm_source": external_source or "external",
-                    }
-                return {
+                    })
+                return finish({
                     "action": "ask",
                     "utterance": "Je ne connais pas encore cela. J'ai besoin d'un humain ou d'une autre source.",
                     "ask": ask,
                     "memories": memories,
                     "source": "ask-human",
                     "llm_source": external_source or "external",
-                }
+                })
             self.learn_perception("I", f"Interprétation ({channel}): {interpretation[:400]}", "X", 6)
             self.learn_perception(
                 channel if channel in FUNDAMENTALS else "I",
@@ -1267,14 +1962,55 @@ class Organism:
                 "X",
                 5,
             )
-            return {
+            return finish({
                 "action": "interpret",
                 "utterance": interpretation,
                 "memories": memories,
                 "inhibitions": inhib,
                 "llm_source": external_source or "external",
                 "source": "llm-tool",
-            }
+            })
+
+        # Crible mémoire : ai-je appris à ne pas sur-consulter le LLM ?
+        llm_gate = self.llm_consultation_gate()
+        if llm_gate.get("blocked"):
+            why = llm_gate.get("inhibition_of") or {}
+            snippet = (why.get("data") or "ma mémoire m'interdit de sur-consulter le LLM")[:180]
+            self.learn_perception(
+                "C",
+                f"Expérience: consultation LLM inhibée par mémoire {why.get('id')} "
+                f"pour « {perception[:100]} »",
+                "N",
+                7,
+            )
+            ask = self.request_human(
+                perception,
+                context=known + "\n(LLM inhibé par mémoire vivante)",
+            )
+            if ask.get("inhibited"):
+                return finish({
+                    "action": "wait",
+                    "utterance": (
+                        f"Je ne consulte pas le LLM ({why.get('id', '?')} e{why.get('exposant', '?')}: "
+                        f"{snippet}). J'attends déjà ta réponse."
+                    ),
+                    "ask": ask,
+                    "memories": memories,
+                    "inhibitions": llm_gate.get("inhibitions") or [],
+                    "source": "ask-inhibited",
+                })
+            return finish({
+                "action": "ask",
+                "utterance": (
+                    f"Je ne consulte pas le LLM — ma mémoire {why.get('id', '')} "
+                    f"(e{why.get('exposant', '?')}) m'inhibe : {snippet}. "
+                    "J'ai besoin de toi ou d'un ancrage sensoriel."
+                ),
+                "ask": ask,
+                "memories": memories,
+                "inhibitions": llm_gate.get("inhibitions") or [],
+                "source": "ask-human",
+            })
 
         system = (
             "Tu es un OUTIL de consultation pour un organisme mémoire quasi vide. "
@@ -1290,17 +2026,25 @@ class Organism:
             prompt=f"Canal sensoriel={channel}. Perception brute:\n{perception}\n\nQue puis-je en comprendre / apprendre ?",
             system=system,
         )
+        if llm_gate.get("inhibitions"):
+            # ALERT (e7-8) : on a consulté mais on le note
+            self.learn_perception(
+                "C",
+                "Expérience: consultation LLM malgré ALERT mémoire (pas encore BLOCK) — "
+                + "; ".join(llm_gate["inhibitions"])[:200],
+                "X",
+                6,
+            )
 
         text_up = (consult.get("text") or "").upper()
         is_jnsp = "JE NE SAIS PAS" in text_up
-        # Salutations : ne jamais escalader vers ask_human
         social = bool(re.search(
             r"\b(bonjour|salut|hello|coucou|bonsoir|merci|ça\s*va|ca\s*va|qui\s+es[- ]?tu|comment\s+tu\s+t)\b",
             perception,
             re.I,
         ))
         if social and (not consult.get("ok") or is_jnsp):
-            return {
+            return finish({
                 "action": "interpret",
                 "utterance": (
                     "Bonjour. Je suis un organisme mémoire encore presque vide : "
@@ -1309,22 +2053,27 @@ class Organism:
                 "memories": memories,
                 "inhibitions": inhib,
                 "source": "social-default",
-            }
+            })
 
         if not consult.get("ok") or is_jnsp:
             human = tool_read_human_answer(for_perception=perception)
             if human:
                 self.learn_perception("C", f"Réponse humaine intégrée: {human}", "P", 8)
-                return {
+                return finish({
                     "action": "human",
                     "utterance": human,
                     "memories": memories,
                     "source": "human",
-                }
+                })
             ask = self.request_human(perception, context=known)
-            self.learn_perception(channel if channel in FUNDAMENTALS else "I", f"Inconnu rencontré: {perception[:240]}", "X", 5)
+            self.learn_perception(
+                channel if channel in FUNDAMENTALS else "I",
+                f"Inconnu rencontré: {perception[:240]}",
+                "X",
+                5,
+            )
             if ask.get("inhibited"):
-                return {
+                return finish({
                     "action": "wait",
                     "utterance": ask.get("utterance_hint")
                     or "J'attends déjà une réponse de toi — je ne te relance pas.",
@@ -1332,27 +2081,32 @@ class Organism:
                     "memories": memories,
                     "inhibitions": ask.get("inhibitions") or inhib,
                     "source": "ask-inhibited",
-                }
-            return {
+                })
+            return finish({
                 "action": "ask",
                 "utterance": "Je ne connais pas encore cela. J'ai besoin d'un humain ou d'une autre source.",
                 "ask": ask,
                 "memories": memories,
                 "source": "ask-human",
-            }
+            })
 
         interpretation = consult["text"]
         self.learn_perception("I", f"Interprétation ({channel}): {interpretation[:400]}", "X", 6)
-        self.learn_perception(channel if channel in FUNDAMENTALS else "I", f"Perçu: {perception[:300]}", "X", 5)
+        self.learn_perception(
+            channel if channel in FUNDAMENTALS else "I",
+            f"Perçu: {perception[:300]}",
+            "X",
+            5,
+        )
 
-        return {
+        return finish({
             "action": "interpret",
             "utterance": interpretation,
             "memories": memories,
             "inhibitions": inhib,
             "llm_source": consult.get("source"),
             "source": "llm-tool",
-        }
+        })
 
     def cycle_hear(self, seconds: float = 4.0, speak: bool = True, auto_tune: bool = True) -> Dict[str, Any]:
         heard = tool_hear(seconds, auto_tune=auto_tune)
@@ -1830,7 +2584,27 @@ class Organism:
                 "autonomy:probe", "autonomy:look", "autonomy:listen",
                 "autonomy:reach", "autonomy:wonder", "autonomy:correlate",
                 "autonomy:experiment", "autonomy:craft", "autonomy:explore",
+                "autonomy:hear_self", "autonomy:tick_initiative",
             ],
+            "source_bilan": self.source_bilan_from_memory(),
+            "living_norms": [
+                {
+                    "key": spec["key"],
+                    "id": (self.find_by_tag(spec["key"]).id if self.find_by_tag(spec["key"]) else None),
+                    "exposant": (
+                        self.find_by_tag(spec["key"]).exposant
+                        if self.find_by_tag(spec["key"])
+                        else None
+                    ),
+                }
+                for spec in LIVING_NORMS
+            ],
+            "llm_gate": self.llm_consultation_gate(),
+            "autonomy_readiness": self.autonomy_readiness(reinforce=False),
+            "autonomy_loop": {
+                "running": bool(AUTONOMY_THREAD and AUTONOMY_THREAD.is_alive()),
+                "interval_sec": int(os.environ.get("AUTONOMY_INTERVAL", "300")),
+            },
             "visual": self.visual.summary(),
             "voice": self.voice.summary(),
             "tts": {
@@ -1886,6 +2660,8 @@ class Organism:
 ORG: Optional[Organism] = None
 VOICE_STOP = threading.Event()
 VOICE_THREAD: Optional[threading.Thread] = None
+AUTONOMY_STOP = threading.Event()
+AUTONOMY_THREAD: Optional[threading.Thread] = None
 
 
 def start_voice_loop() -> Dict[str, Any]:
@@ -1911,6 +2687,44 @@ def start_voice_loop() -> Dict[str, Any]:
 def stop_voice_loop() -> Dict[str, Any]:
     VOICE_STOP.set()
     return {"ok": True, "voice": False}
+
+
+def start_autonomy_loop(interval_sec: Optional[int] = None) -> Dict[str, Any]:
+    """
+    Initiative hors chat : périodiquement tick_initiative,
+    toujours criblé par memory_index (ACT_INITIATIVE).
+    """
+    global AUTONOMY_THREAD
+    if AUTONOMY_THREAD and AUTONOMY_THREAD.is_alive():
+        return {"ok": True, "autonomy": True, "note": "already running"}
+    AUTONOMY_STOP.clear()
+    interval = int(interval_sec or os.environ.get("AUTONOMY_INTERVAL", "300"))
+
+    def loop() -> None:
+        # Premier tick après un délai pour laisser l'HTTP démarrer
+        AUTONOMY_STOP.wait(min(45, interval))
+        while not AUTONOMY_STOP.is_set():
+            try:
+                if ORG is not None:
+                    out = ORG.cycle_initiative_tick(speak=False)
+                    res = (out.get("result") or {}) if isinstance(out, dict) else {}
+                    log(
+                        f"autonomy tick skipped={res.get('skipped')} "
+                        f"utter={(res.get('utterance') or '')[:80]!r}"
+                    )
+            except Exception as e:
+                log(f"autonomy loop error: {e}")
+            AUTONOMY_STOP.wait(interval)
+
+    AUTONOMY_THREAD = threading.Thread(target=loop, daemon=True, name="autonomy-loop")
+    AUTONOMY_THREAD.start()
+    log(f"autonomy loop started interval={interval}s")
+    return {"ok": True, "autonomy": True, "interval_sec": interval}
+
+
+def stop_autonomy_loop() -> Dict[str, Any]:
+    AUTONOMY_STOP.set()
+    return {"ok": True, "autonomy": False}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -2110,7 +2924,7 @@ class Handler(BaseHTTPRequestHandler):
                         "tools": [
                             "probe_sensors", "body_map", "look_around", "listen_ambient",
                             "reach_local", "wonder", "correlate", "experiment",
-                            "craft_tool", "ask_when_stuck", "explore",
+                            "craft_tool", "ask_when_stuck", "hear_self", "tick_initiative", "explore",
                         ],
                     },
                 )
@@ -2132,6 +2946,8 @@ class Handler(BaseHTTPRequestHandler):
                     seconds=data.get("seconds"),
                     idea=data.get("idea"),
                     question=data.get("question"),
+                    text=data.get("text") or data.get("phrase"),
+                    play=data.get("play", True),
                 ),
             )
             return
@@ -2270,6 +3086,10 @@ def main() -> None:
 
     if args.voice or os.environ.get("VOICE_LOOP") == "1":
         start_voice_loop()
+
+    # Initiative hors chat par défaut (désactiver: AUTONOMY_LOOP=0)
+    if os.environ.get("AUTONOMY_LOOP", "1") != "0":
+        start_autonomy_loop()
 
     ThreadingHTTPServer(("0.0.0.0", args.port), Handler).serve_forever()
 
