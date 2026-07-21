@@ -7,6 +7,7 @@
 
 | Document | Contenu |
 |----------|---------|
+| **[`../whitepaper/MemorySystemAI_Whitepaper_v1.md`](../whitepaper/MemorySystemAI_Whitepaper_v1.md)** | **Fondement** — whitepaper (FR/EN) |
 | [`LANGUES.md`](LANGUES.md) | Politique FR / EN |
 | [`POURQUOI_CA_COMPTE.md`](POURQUOI_CA_COMPTE.md) | Sens de la recherche |
 | [`EVOLUTION_MEMORY_NODE_2026-07.md`](EVOLUTION_MEMORY_NODE_2026-07.md) | Chronique prototype (phases A–I) |

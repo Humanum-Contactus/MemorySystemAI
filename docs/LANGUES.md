@@ -12,6 +12,7 @@
 
 | FR | EN |
 |----|-----|
+| **[`whitepaper/MemorySystemAI_Whitepaper_v1.md`](../whitepaper/MemorySystemAI_Whitepaper_v1.md)** (FR+EN, fondement) | same file (bilingual abstract + FR body) |
 | [`README.md`](../README.md) | [`README.en.md`](../README.en.md) |
 | [`01_CONCEPT_FONDAMENTAL.txt`](../01_CONCEPT_FONDAMENTAL.txt) | [`en/CONCEPT_FUNDAMENTAL.md`](en/CONCEPT_FUNDAMENTAL.md) |
 | [`POURQUOI_CA_COMPTE.md`](POURQUOI_CA_COMPTE.md) | [`en/WHY_IT_MATTERS.md`](en/WHY_IT_MATTERS.md) |
@@ -22,5 +23,8 @@
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | (bilingue FR + EN dans le même fichier) |
 | [`../prototypes/memory-node/README.md`](../prototypes/memory-node/README.md) | [`../prototypes/memory-node/README.en.md`](../prototypes/memory-node/README.en.md) |
 
-Whitepaper technique historique : [`whitepaper/`](../whitepaper/) (EN).  
-Concept fondateur narratif : français (`01_`, `04_`, `05_`).
+**Ordre de lecture recommandé / Recommended reading order :**  
+1. Whitepaper → 2. Concept / Pourquoi ça compte → 3. Prototype (incarnation).
+
+Whitepaper = fondement. Prototype = ébauche incarnée, pas le substitut du concept.
+

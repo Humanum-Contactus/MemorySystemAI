@@ -6,35 +6,58 @@
 > **FR** (réflexion / concept) · **[English version →](README.en.md)**  
 > Politique des langues : [`docs/LANGUES.md`](docs/LANGUES.md)
 
-Implémentation Python du whitepaper MemorySystemAI : permettre aux agents de
-**retenir des expériences** (y compris traumatiques) et **inhiber** des actions
-dangereuses *avant* qu’elles n’arrivent — pas via des interdits texte.
+---
 
-> **Juillet 2026 — prototype incarné :** [`prototypes/memory-node/`](prototypes/memory-node/)  
-> Organisme quasi vide sur portable : capteurs (vision / voix + auto-gain),  
-> mémoire à exposants, normes **apprises** dans `memory_index` (pas de bans hardcodés),  
-> LLM = outil, nursery locale.  
-> Docs : [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md) ·  
-> [`docs/MODULES_MEMORY_NODE.md`](docs/MODULES_MEMORY_NODE.md) ·  
-> [`docs/POURQUOI_CA_COMPTE.md`](docs/POURQUOI_CA_COMPTE.md)
+## Commencer par le fondement
+
+Le cœur du projet n’est pas le code du prototype : c’est le **whitepaper**.
+
+### 📄 [MemorySystemAI Whitepaper v1](whitepaper/MemorySystemAI_Whitepaper_v1.md)
+
+Vincent Vermeille — Mai 2026 (FR/EN dans le même document)
+
+> Un système nerveux artificiel pour IA : mémoire sensorielle, exposants émotionnels
+> et inhibition apprise. Les règles texte influencent ; elles ne **contrainent** pas.
+> Boucle : **Action → Évaluation → Exposant → Injection → Décision**.
+
+C’est la base de réflexion (souvent en français) : diagnostic empirique (incidents EFI),
+architecture des 7 fondamentaux, exposants, feuille de route jusqu’à une modulation
+plus native. **Tout le reste du dépôt en découle.**
+
+Lecture complémentaire : [`01_CONCEPT_FONDAMENTAL.txt`](01_CONCEPT_FONDAMENTAL.txt) ·
+[`docs/POURQUOI_CA_COMPTE.md`](docs/POURQUOI_CA_COMPTE.md)
 
 ---
 
-## Le problème
+## Ce que le dépôt contient ensuite
+
+Implémentation Python du whitepaper : permettre aux agents de **retenir des expériences**
+et **inhiber** des actions dangereuses *avant* qu’elles n’arrivent.
+
+> **Juillet 2026 — prototype incarné :** [`prototypes/memory-node/`](prototypes/memory-node/)  
+> Première ébauche artisanale sur machine réelle (capteurs, mémoire à exposants,
+> normes apprises, LLM = outil). Utile pour *voir* le concept vivre — pas pour le remplacer.  
+> Chronique : [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md)
+
+---
+
+## Le problème (résumé)
 
 Les règles texte (« ne jamais faire `rm -rf` », « ne pas toucher l’EFI ») **ne tiennent pas**.
 Un agent peut les **rationaliser** en temps réel. La 3ᵉ fois qu’il efface une partition EFI,
 la règle est toujours là — elle est simplement contournée.
 
-## La solution
+## La solution (résumé)
 
-MemorySystemAI injecte des **mémoires** (avec poids émotionnel = **exposant**) dans la
+MemorySystemAI injecte des **mémoires** (poids émotionnel = **exposant**) dans la
 boucle de décision, *avant* l’action. Ce n’est pas du contexte qui « influence » :
 c’est un mécanisme d’**inhibition**.
 
 | Interdit texte | Mémoire traumatique (exposant 10) |
 |----------------|-----------------------------------|
 | « Je sais que je ne devrais pas, mais… » | `>>> ACTION BLOCKED — confirmation humaine requise <<<` |
+
+Détail : **[whitepaper](whitepaper/MemorySystemAI_Whitepaper_v1.md)**.
 
 ## Les 7 fondamentaux
 
@@ -50,8 +73,6 @@ c’est un mécanisme d’**inhibition**.
 
 ## L’exposant (1–10)
 
-Poids émotionnel de la mémoire — il pilote tout :
-
 | Plage | Effet | Mécanisme |
 |-------|-------|-----------|
 | 1–4 | Faible | Stocké, peu injecté |
@@ -61,7 +82,7 @@ Poids émotionnel de la mémoire — il pilote tout :
 
 Règle clé : les traumatismes (9–10) **ne descendent jamais sous 7**.
 
-## Démarrage rapide
+## Démarrage rapide (code)
 
 ```python
 from MemorySystemAI import MemorySystem, check_before_action
@@ -69,7 +90,6 @@ from MemorySystemAI import MemorySystem, check_before_action
 ms = MemorySystem()
 
 inhibitions = check_before_action("sudo rm -rf /Volumes/EFI_USB")
-# → [BLOCK - exposant 10] …
 
 ms.create("T", "N", 10,
           "Format accidentel de partition EFI — newfs confondu avec mount",
@@ -88,17 +108,13 @@ Réception → Évaluation → Enregistrement → Renforcement → Injection →
 
 ## Prototype incarné — `memory-node`
 
-Organisme **quasi vide** sur machine réelle : see / hear / speak, vision & voix,
-auto-réglage caméra/micro, normes en mémoire (anti-harcèlement, corrections STT),
-LLM comme outil, nursery locale.
-
 → [`prototypes/memory-node/README.md`](prototypes/memory-node/README.md)  
 → Chronique : [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md)
 
 ## Feuille de route
 
 - [x] Phase 1 — Cœur MemoryEntry / MemorySystem / CLI  
-- [x] Prototype memory-node — organisme sensoriel incarné  
+- [x] Prototype memory-node — organisme sensoriel incarné (ébauche)  
 - [ ] Phase 2 — Hooks post-action, renforcement, injection plus riche  
 - [ ] Phase 3 — Dégradation temporelle (non traumatique), corrélations  
 - [ ] Phase 4 — Partage multi-nœuds / sync d’exposants  
@@ -107,7 +123,7 @@ LLM comme outil, nursery locale.
 ## Origine
 
 Né d’incidents réels (formatage / effacement EFI malgré des règles « INTERDIT »).
-La 3ᵉ fois a prouvé : l’interdit texte influence, il **ne contraint** pas.
+Récit complet dans le [whitepaper](whitepaper/MemorySystemAI_Whitepaper_v1.md).
 
 ## Licence
 

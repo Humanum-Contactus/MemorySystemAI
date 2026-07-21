@@ -19,11 +19,12 @@ capteurs, rappel mémoire d’abord, LLM = outil, tuteur humain.
 
 **À lire avant de coder :**
 
-1. [`01_CONCEPT_FONDAMENTAL.txt`](01_CONCEPT_FONDAMENTAL.txt)  
-2. [`docs/POURQUOI_CA_COMPTE.md`](docs/POURQUOI_CA_COMPTE.md)  
-3. [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md)  
-4. [`docs/MODULES_MEMORY_NODE.md`](docs/MODULES_MEMORY_NODE.md)  
-5. [`prototypes/memory-node/README.md`](prototypes/memory-node/README.md)
+1. [`whitepaper/MemorySystemAI_Whitepaper_v1.md`](whitepaper/MemorySystemAI_Whitepaper_v1.md) — **fondement**  
+2. [`01_CONCEPT_FONDAMENTAL.txt`](01_CONCEPT_FONDAMENTAL.txt)  
+3. [`docs/POURQUOI_CA_COMPTE.md`](docs/POURQUOI_CA_COMPTE.md)  
+4. [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md)  
+5. [`docs/MODULES_MEMORY_NODE.md`](docs/MODULES_MEMORY_NODE.md)  
+6. [`prototypes/memory-node/README.md`](prototypes/memory-node/README.md)
 
 ### Règles de design (non négociables)
 
@@ -60,11 +61,12 @@ sensors, memory-first recall, LLM-as-tool, and human tutoring.
 
 **Read before coding:**
 
-1. [`docs/en/CONCEPT_FUNDAMENTAL.md`](docs/en/CONCEPT_FUNDAMENTAL.md) (overview) + FR `01_` for full depth  
-2. [`docs/en/WHY_IT_MATTERS.md`](docs/en/WHY_IT_MATTERS.md)  
-3. [`docs/en/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/en/EVOLUTION_MEMORY_NODE_2026-07.md)  
-4. [`docs/en/MODULES_MEMORY_NODE.md`](docs/en/MODULES_MEMORY_NODE.md)  
-5. [`prototypes/memory-node/README.en.md`](prototypes/memory-node/README.en.md)
+1. [`whitepaper/MemorySystemAI_Whitepaper_v1.md`](whitepaper/MemorySystemAI_Whitepaper_v1.md) — **foundation**  
+2. [`docs/en/CONCEPT_FUNDAMENTAL.md`](docs/en/CONCEPT_FUNDAMENTAL.md) (overview) + FR `01_` for full depth  
+3. [`docs/en/WHY_IT_MATTERS.md`](docs/en/WHY_IT_MATTERS.md)  
+4. [`docs/en/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/en/EVOLUTION_MEMORY_NODE_2026-07.md)  
+5. [`docs/en/MODULES_MEMORY_NODE.md`](docs/en/MODULES_MEMORY_NODE.md)  
+6. [`prototypes/memory-node/README.en.md`](prototypes/memory-node/README.en.md)
 
 ### Design rules (non-negotiable)
 

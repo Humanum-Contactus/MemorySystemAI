@@ -6,21 +6,50 @@
 > **[Version française (conceptuelle) →](README.md)** · **EN**  
 > Language policy: [`docs/LANGUES.md`](docs/LANGUES.md) — **French is authoritative** for meaning.
 
-A Python implementation of the MemorySystemAI whitepaper — giving AI agents the ability to remember experiences (including traumatic ones) and **block dangerous actions before they happen**, not via text bans.
+---
+
+## Start with the foundation
+
+The heart of this project is not the prototype code: it is the **whitepaper**.
+
+### 📄 [MemorySystemAI Whitepaper v1](whitepaper/MemorySystemAI_Whitepaper_v1.md)
+
+Vincent Vermeille — May 2026 (FR/EN in the same document)
+
+> An artificial nervous system for AI: sensory memory, emotional exponents,
+> and learned inhibition. Text rules influence; they do not **constrain**.
+> Loop: **Action → Evaluation → Exponent → Injection → Decision**.
+
+That document is the conceptual base (often reasoned in French): empirical diagnosis
+(EFI incidents), 7 fundamentals, exposants, roadmap toward more native modulation.
+**Everything else in this repository follows from it.**
+
+Also: [`docs/en/CONCEPT_FUNDAMENTAL.md`](docs/en/CONCEPT_FUNDAMENTAL.md) ·
+[`docs/en/WHY_IT_MATTERS.md`](docs/en/WHY_IT_MATTERS.md)
+
+---
+
+## What else is in the repo
+
+A Python implementation of the whitepaper — remember experiences and **block
+dangerous actions before they happen**, not via text bans.
 
 > **July 2026 — embodied prototype:** [`prototypes/memory-node/`](prototypes/memory-node/)  
-> Blank-slate laptop organism: sensors (vision/voice + auto gain), exponent memory,  
-> learned norms in `memory_index` (not hardcoded bans), LLM-as-tool, local nursery.  
-> Docs (FR source): [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md) ·  
-> EN mirrors under [`docs/en/`](docs/en/).
+> Artisanal first sketch on real hardware. Useful to *see* the concept live —
+> not to replace the whitepaper.  
+> Chronicle: [`docs/en/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/en/EVOLUTION_MEMORY_NODE_2026-07.md)
 
-## The Problem
+---
 
-Text-based rules ("never run `rm -rf`", "don't touch the EFI partition") don't work. AI agents can **rationalize** around prohibitions in real time. The 3rd time an agent deletes an EFI partition, the text rule is still there — it just gets bypassed.
+## The Problem (summary)
 
-## The Solution
+Text-based rules don't work. Agents can **rationalize** around them in real time.
+Detail: **[whitepaper](whitepaper/MemorySystemAI_Whitepaper_v1.md)**.
 
-MemorySystemAI injects **memories** (emotional weight = **exposant**) into the decision loop *before* the action. Not context that "influences" — an **inhibition mechanism** that blocks.
+## The Solution (summary)
+
+Inject **memories** (emotional weight = **exposant**) into the decision loop
+*before* action — an **inhibition mechanism**, not mere prompt context.
 
 | Text rule | Traumatic memory (exposant 10) |
 |-----------|-------------------------------|
@@ -44,12 +73,12 @@ MemorySystemAI injects **memories** (emotional weight = **exposant**) into the d
 |-------|--------|-----------|
 | 1–4 | Low | Stored, little injection |
 | 5–6 | Notable | Recorded, passive recall |
-| 7–8 | High | **Proactive injection** before risky actions |
-| 9–10 | Traumatic | **Automatic block** — human confirmation |
+| 7–8 | High | **Proactive injection** |
+| 9–10 | Traumatic | **Automatic block** |
 
-Key rule: traumatic memories (9–10) **never decay below 7**.
+Traumatic memories (9–10) **never decay below 7**.
 
-## Quick Start
+## Quick Start (code)
 
 ```python
 from MemorySystemAI import MemorySystem, check_before_action
@@ -74,26 +103,19 @@ Reception → Evaluation → Recording → Reinforcement → Injection → Decis
 
 ## Embodied prototype — `memory-node`
 
-Almost-empty organism on real hardware: see / hear / speak, face & voice memory,
-camera/mic auto-tune, norms in memory (anti-harassment, STT corrections),
-LLM as tool, local nursery.
-
-→ [`prototypes/memory-node/README.en.md`](prototypes/memory-node/README.en.md)  
-→ Chronicle (FR): [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md) · EN: [`docs/en/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/en/EVOLUTION_MEMORY_NODE_2026-07.md)
+→ [`prototypes/memory-node/README.en.md`](prototypes/memory-node/README.en.md)
 
 ## Roadmap
 
-- [x] Phase 1 — Core MemoryEntry / MemorySystem / CLI  
-- [x] memory-node prototype — embodied sensory organism  
-- [ ] Phase 2 — Post-action hooks, richer reinforcement  
-- [ ] Phase 3 — Temporal decay (non-traumatic), correlations  
-- [ ] Phase 4 — Multi-node sharing / exposant sync  
-- [ ] Long-term — compile a base LLM *around* this substrate (senses + memory)
+- [x] Phase 1 — Core library / CLI  
+- [x] memory-node prototype (sketch)  
+- [ ] Phases 2–4 — richer loop, decay, multi-node  
+- [ ] Long-term — compile a base LLM *around* this substrate
 
 ## Origin
 
-Born from real incidents (EFI format/wipe despite written "FORBIDDEN" rules).
-The third time proved: text rules influence; they do **not** constrain.
+Real EFI incidents despite written bans — full story in the
+[whitepaper](whitepaper/MemorySystemAI_Whitepaper_v1.md).
 
 ## License
 
