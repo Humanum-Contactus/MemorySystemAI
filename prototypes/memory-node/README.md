@@ -2,17 +2,21 @@
 
 Premier jet d’un **nœud Sensors&MemorySystemAI** : ardoise quasi vide,
 outils sensoriels, consultation LLM externe, apprentissage par exposants,
-nursery graphique locale, pont Telegram via OpenClaw.
+nursery graphique locale.
 
 > Ce n’est **pas** un chatbot avec interdits texte.  
-> Le LLM (Kimi/Puter, Ollama, …) est un **outil**, pas l’identité.
+> Le LLM est un **outil**, pas l’identité.  
+> Les normes apprises vivent dans **`memory_index`**, pas dans des tables `.py`.
 
-Documentation projet :
+Documentation :
 
-- [Chronique d’évolution](../../docs/EVOLUTION_MEMORY_NODE_2026-07.md)  
-- [Architecture & API](../../docs/ARCHITECTURE_MEMORY_NODE.md)  
-- [Pourquoi ça compte](../../docs/POURQUOI_CA_COMPTE.md)  
-- [Index docs](../../docs/README.md)
+| Doc | Contenu |
+|-----|---------|
+| [Chronique d’évolution](../../docs/EVOLUTION_MEMORY_NODE_2026-07.md) | Histoire du chantier |
+| [Architecture & API](../../docs/ARCHITECTURE_MEMORY_NODE.md) | Flux + routes HTTP |
+| [Modules](../../docs/MODULES_MEMORY_NODE.md) | Référence fichier par fichier |
+| [Pourquoi ça compte](../../docs/POURQUOI_CA_COMPTE.md) | Sens de la recherche |
+| [Index docs](../../docs/README.md) | Tous les docs |
 
 ---
 
@@ -20,14 +24,18 @@ Documentation projet :
 
 | Fichier | Rôle |
 |---------|------|
-| `organism.py` | Runtime HTTP : mémoire + see/hear/speak + consult LLM + ask humain |
-| `ui/index.html` | Nursery kiosk (interaction locale) |
+| `organism.py` | Runtime HTTP : boucle cognitive + outils |
+| `visual_memory.py` | Empreintes visage → identité (V) |
+| `voice_memory.py` | Empreintes voix → identité (O) |
+| `sensor_camera.py` | Auto-réglage caméra V4L2 |
+| `sensor_mic.py` | Auto-réglage gain micro ALSA |
+| `ui/index.html` | Nursery kiosk |
+| `requirements.txt` | Dépendances Python indicatives |
 | `systemd/memory-node.service.example` | Unit systemd |
-| `openclaw-skill/` | Skill OpenClaw + `baby_api.py` + `ask_poller.py` |
+| `openclaw-skill/` | Pont Telegram (**pont**, pas le cœur du concept) |
 
-Prérequis bibliothèque : placer le package `MemorySystemAI` (ce dépôt) dans
-`PYTHONPATH` ou à côté de `organism.py` (voir chemins dans `organism.py` :
-`ROOT=/opt/memorysystemai` en prod).
+Prérequis : package `MemorySystemAI` (racine du dépôt) sur `PYTHONPATH`,
+ou déployé sous `/opt/memorysystemai/` (prod).
 
 ---
 
@@ -35,9 +43,10 @@ Prérequis bibliothèque : placer le package `MemorySystemAI` (ce dépôt) dans
 
 ```
 perception (texte / micro / caméra)
+    → inhibition (mémoires à tags, exposant élevé)
     → rappel mémoire (prioritaire si fait déjà appris)
-    → sinon consulter LLM (Puter/Kimi puis Ollama)
-    → sinon ask_human
+    → sinon consulter LLM (outil)
+    → sinon request_human (inhibé si mémoire anti-harcèlement + pending)
     → enregistrer (fondamentaux + exposant)
 ```
 
@@ -48,65 +57,50 @@ perception (texte / micro / caméra)
 | Méthode | Route | Rôle |
 |---------|-------|------|
 | GET | `/` | Nursery |
-| GET | `/status` `/memories` `/ask` | État |
-| POST | `/perceive` | Perception texte |
-| POST | `/see` `/hear` `/speak` | Capteurs |
+| GET | `/status` `/memories` `/faces` `/voices` `/ask` `/mic` `/camera` `/vision` | État |
+| POST | `/perceive` | Perception texte (+ teach identité / corrections) |
+| POST | `/see` `/capture` `/hear` `/speak` | Capteurs |
+| POST | `/mic` `/camera` `/volume` `/vision` | Capteurs / sortie |
 | POST | `/ask/answer` | Réponse tuteur |
-| POST | `/voice` | Boucle écoute |
 | POST | `/reset` | `{"confirm":"RESET_ORGANISM"}` |
 
 Détail : [ARCHITECTURE_MEMORY_NODE.md](../../docs/ARCHITECTURE_MEMORY_NODE.md).
 
 ---
 
-## Scénario de démo (texte)
+## Déploiement typique (Ubuntu nœud)
 
 ```bash
-export MEMORY_NODE_URL=http://127.0.0.1:8765
-
-# 1. Identité
-python openclaw-skill/baby_api.py perceive "Bonjour. Qui es-tu ?"
-
-# 2. Nomination
-python openclaw-skill/baby_api.py perceive "Je m appelle Vincent. Retiens mon nom."
-
-# 3. Vérification
-python openclaw-skill/baby_api.py perceive "Comment je m appelle ?"
-
-# 4. Enseignement
-python openclaw-skill/baby_api.py perceive "MonWifi est le reseau local via Starlink."
-
-# 5. Rappel (doit idealement renvoyer source memory)
-python openclaw-skill/baby_api.py perceive "Qu est-ce que MonWifi ?"
-python openclaw-skill/baby_api.py status
+# Sur le nœud (exemple)
+sudo mkdir -p /opt/memorysystemai
+# copier MemorySystemAI + prototypes/memory-node/*.py + ui/
+sudo systemctl enable --now memory-node.service
+# tokens hors git :
+#   /opt/memorysystemai/state/nvidia_token.txt
+#   /opt/memorysystemai/state/puter_token.txt
 ```
 
-Sur la nursery : même séquence via le champ texte + bouton **Kimi ON/OFF**.
+Voir `systemd/memory-node.service.example`.
 
 ---
 
-## Déploiement (esquisse)
+## Enseignements utiles (tuteur)
 
-1. Machine Linux avec caméra/micro.  
-2. Copier ce dépôt → ex. `/opt/memorysystemai/` (core + `organism.py` + `ui/`).  
-3. `python3 -m venv .venv` + dépendances (Ollama client HTTP stdlib ; STT optionnel).  
-4. Ollama local et/ou `state/puter_token.txt` (chmod 600).  
-5. Installer `systemd/memory-node.service.example`.  
-6. Optionnel : Openbox + Chromium kiosk → `http://127.0.0.1:8765/`.  
-7. Optionnel : OpenClaw skill + `MEMORY_NODE_URL` + poller Telegram.
-
----
-
-## Secrets — ne jamais committer
-
-- `state/puter_token.txt`  
-- tokens Telegram / mots de passe  
-- `memory_index.json` de production (mémoires personnelles)
+```text
+c'est moi Vincent
+quand tu entends c'est mauve ca ça veut dire c'est moi Vincent
+arrête de me relancer   # renforce l'inhibition sociale si ask pending
+MonWifi est le réseau local.
+```
 
 ---
 
-## Statut honnête
+## Ce que ce prototype n’est pas encore
 
-Prototype **abouti comme premier jet de démonstration du principe**.  
-Pas encore le système nerveux complet (inhibition pré-action machine, multi-nœuds,
-consolidation…). Voir feuille de route `04_FEUILLE_DE_ROUTE.txt`.
+- Similarité sémantique robuste  
+- Corroboration multi-sens complète  
+- Fundamental/State automatiques fiables  
+- Indépendance totale vis-à-vis des ponts type OpenClaw  
+
+Le risque conscient : rester un « chatbot amélioré avec mémoire ».  
+La boussole : **crible mémoire + exposants**, partout.

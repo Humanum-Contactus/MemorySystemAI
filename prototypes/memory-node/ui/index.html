@@ -4,58 +4,62 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MemorySystemAI — Nursery</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Sora:wght@400;500;600&display=swap" rel="stylesheet" />
+  <!-- Polices système (kiosk souvent hors-ligne pour Google Fonts) -->
   <script src="https://js.puter.com/v2/"></script>
   <style>
     :root {
-      --bg0: #0c1210;
-      --bg1: #14201b;
-      --ink: #e8f0ea;
-      --muted: #8aa396;
-      --line: rgba(232, 240, 234, 0.12);
-      --accent: #c4f542;
-      --warm: #f0a36b;
-      --danger: #ff6b6b;
+      --bg0: #101412;
+      --bg1: #18211c;
+      --panel: rgba(12, 18, 15, 0.72);
+      --ink: #eef3ef;
+      --muted: #93a89b;
+      --line: rgba(238, 243, 239, 0.14);
+      --accent: #b8e04a;
+      --accent-ink: #121a10;
+      --warm: #e0a06a;
       --ok: #6bcf8e;
+      --danger: #ff6b6b;
+      --serif: "Liberation Serif", "DejaVu Serif", "Noto Serif", Georgia, serif;
+      --sans: "Liberation Sans", "DejaVu Sans", "Noto Sans", "Segoe UI", system-ui, sans-serif;
     }
     * { box-sizing: border-box; }
     html, body {
-      margin: 0; height: 100%;
+      margin: 0;
+      height: 100%;
       background: var(--bg0);
       color: var(--ink);
-      font-family: "Sora", system-ui, sans-serif;
-      overflow: hidden;
+      font-family: var(--sans);
     }
     body {
+      overflow: hidden;
       background:
-        radial-gradient(1200px 600px at 10% -10%, rgba(196, 245, 66, 0.08), transparent 55%),
-        radial-gradient(900px 500px at 100% 0%, rgba(240, 163, 107, 0.07), transparent 50%),
-        linear-gradient(165deg, #0c1210 0%, #14201b 48%, #0e1714 100%);
+        radial-gradient(1000px 520px at 8% -8%, rgba(184, 224, 74, 0.07), transparent 55%),
+        radial-gradient(800px 420px at 100% 0%, rgba(224, 160, 106, 0.06), transparent 50%),
+        linear-gradient(165deg, #101412 0%, #18211c 50%, #0f1512 100%);
     }
     .shell {
       height: 100%;
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-      max-width: 1180px;
+      max-width: 1400px;
       margin: 0 auto;
-      padding: 28px 32px 20px;
-      gap: 18px;
+      padding: 18px 22px 14px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 12px;
     }
     header {
       display: flex;
       align-items: flex-end;
       justify-content: space-between;
       gap: 16px;
-      animation: rise 0.7s ease both;
+      min-height: 0;
     }
     .brand {
-      font-family: "Instrument Serif", Georgia, serif;
-      font-size: clamp(2.4rem, 5vw, 3.6rem);
-      line-height: 0.95;
+      font-family: var(--serif);
+      font-size: clamp(1.9rem, 3.5vw, 2.8rem);
+      line-height: 1;
       letter-spacing: -0.02em;
       margin: 0;
+      font-weight: 400;
     }
     .brand em {
       font-style: italic;
@@ -64,14 +68,15 @@
     }
     .sub {
       color: var(--muted);
-      font-size: 0.92rem;
-      margin-top: 8px;
-      max-width: 36ch;
+      font-size: 0.86rem;
+      margin: 6px 0 0;
+      max-width: 42ch;
+      line-height: 1.35;
     }
     .meta {
       text-align: right;
       color: var(--muted);
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       display: grid;
       gap: 6px;
       justify-items: end;
@@ -81,173 +86,266 @@
       align-items: center;
       gap: 8px;
       border: 1px solid var(--line);
-      padding: 6px 12px;
+      padding: 5px 11px;
       border-radius: 999px;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
     .dot {
       width: 8px; height: 8px; border-radius: 50%;
       background: var(--ok);
-      box-shadow: 0 0 0 0 rgba(107, 207, 142, 0.5);
       animation: pulse 2.2s infinite;
     }
     main {
       display: grid;
-      grid-template-columns: 1.35fr 0.9fr;
-      gap: 18px;
+      grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.9fr);
+      gap: 14px;
       min-height: 0;
-    }
-    @media (max-width: 900px) {
-      main { grid-template-columns: 1fr; }
-      body { overflow: auto; }
-      .shell { height: auto; min-height: 100%; }
+      height: 100%;
     }
     .stage, .side {
       border: 1px solid var(--line);
-      border-radius: 18px;
-      background: rgba(8, 14, 12, 0.55);
-      backdrop-filter: blur(8px);
+      border-radius: 16px;
+      background: var(--panel);
       min-height: 0;
-      animation: rise 0.85s ease both;
+      overflow: hidden;
     }
-    .side { animation-delay: 0.08s; display: flex; flex-direction: column; }
     .stage {
-      padding: 22px;
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-      gap: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
     .utter {
-      font-family: "Instrument Serif", Georgia, serif;
-      font-size: clamp(1.5rem, 3.2vw, 2.2rem);
-      line-height: 1.25;
-      min-height: 4.5em;
-      white-space: pre-wrap;
+      font-family: var(--serif);
+      font-size: clamp(1.05rem, 2vw, 1.45rem);
+      line-height: 1.3;
+      max-height: 18vh;
+      overflow: auto;
+      flex: 0 1 auto;
+      padding-right: 4px;
     }
     .utter .ghost { color: var(--muted); font-style: italic; }
+    #previewWrap {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 0 0 auto;
+      min-height: 160px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(0,0,0,0.35);
+      padding: 8px;
+      overflow: hidden;
+    }
+    #previewWrap .eye-label {
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    #previewWrap .eye-label strong { color: var(--accent); font-weight: 600; }
+    #previewImg {
+      display: block;
+      width: 100%;
+      max-height: min(36vh, 320px);
+      min-height: 140px;
+      border-radius: 8px;
+      object-fit: contain;
+      background: #050807;
+    }
+    #previewWrap.empty #previewImg { opacity: 0.25; }
+    #previewWrap.empty .eye-ph { display: block; }
+    .eye-ph {
+      display: none;
+      position: absolute;
+      inset: 40% 12px auto;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      pointer-events: none;
+    }
+    #previewWrap { position: relative; }
     .log {
+      flex: 1 1 auto;
+      min-height: 48px;
       overflow: auto;
       border-top: 1px solid var(--line);
-      padding-top: 12px;
-      font-size: 0.82rem;
+      padding-top: 8px;
+      font-size: 0.78rem;
       color: var(--muted);
       display: grid;
-      gap: 8px;
+      gap: 6px;
+      align-content: start;
     }
-    .log div { border-left: 2px solid var(--line); padding-left: 10px; }
+    .log div { border-left: 2px solid var(--line); padding-left: 8px; }
+    .controls {
+      flex: 0 0 auto;
+      display: grid;
+      gap: 8px;
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+    }
     .actions {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
     }
     button {
       font-family: inherit;
       border: 1px solid var(--line);
       background: transparent;
       color: var(--ink);
-      padding: 14px 10px;
-      border-radius: 12px;
+      padding: 11px 8px;
+      border-radius: 10px;
       cursor: pointer;
-      font-size: 0.85rem;
-      transition: background 0.2s, border-color 0.2s, transform 0.15s;
+      font-size: 0.82rem;
+      transition: background 0.15s, border-color 0.15s;
     }
-    button:hover { background: rgba(196, 245, 66, 0.08); border-color: rgba(196, 245, 66, 0.35); }
+    button:hover { background: rgba(184, 224, 74, 0.08); border-color: rgba(184, 224, 74, 0.35); }
     button:active { transform: scale(0.98); }
-    button.primary { background: var(--accent); color: #10210f; border-color: transparent; font-weight: 600; }
-    button.primary:hover { background: #d4ff6a; }
-    button.warn { border-color: rgba(240, 163, 107, 0.45); color: var(--warm); }
+    button.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
+    button.primary:hover { filter: brightness(1.05); }
+    button.warn { border-color: rgba(224, 160, 106, 0.45); color: var(--warm); }
+    button:disabled { opacity: 0.75; cursor: default; }
     .composer {
       display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px;
+      grid-template-columns: 1fr 110px;
+      gap: 8px;
+      align-items: stretch;
     }
     textarea, input[type="text"] {
       width: 100%;
       resize: none;
       border: 1px solid var(--line);
-      background: rgba(0,0,0,0.25);
+      background: rgba(0,0,0,0.28);
       color: var(--ink);
-      border-radius: 12px;
-      padding: 14px;
+      border-radius: 10px;
+      padding: 12px;
       font: inherit;
       outline: none;
+      height: 52px;
+      min-height: 52px;
     }
-    textarea:focus, input:focus { border-color: rgba(196, 245, 66, 0.45); }
+    textarea:focus, input:focus { border-color: rgba(184, 224, 74, 0.45); }
+    .composer > button.primary {
+      height: 52px;
+      padding: 0 12px;
+    }
+    .fb {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .side {
+      display: flex;
+      flex-direction: column;
+    }
     .side-head {
-      padding: 16px 18px 10px;
+      padding: 14px 16px 10px;
       border-bottom: 1px solid var(--line);
       display: flex;
       justify-content: space-between;
       align-items: baseline;
+      flex: 0 0 auto;
     }
     .side-head h2 {
       margin: 0;
-      font-family: "Instrument Serif", Georgia, serif;
-      font-size: 1.35rem;
+      font-family: var(--serif);
+      font-size: 1.25rem;
       font-weight: 400;
     }
+    .faces-box, .ask-box {
+      margin: 10px 12px 0;
+      padding: 12px;
+      border-radius: 10px;
+      flex: 0 0 auto;
+    }
+    .faces-box {
+      border: 1px solid rgba(184, 224, 74, 0.28);
+      background: rgba(184, 224, 74, 0.06);
+    }
+    .faces-box h3, .ask-box h3 {
+      margin: 0 0 6px;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .faces-box h3 { color: var(--accent); }
+    .ask-box {
+      display: none;
+      border: 1px solid rgba(224, 160, 106, 0.4);
+      background: rgba(224, 160, 106, 0.08);
+    }
+    .ask-box.show { display: block; }
+    .ask-box h3 { color: var(--warm); }
+    #facesList {
+      font-size: 0.84rem;
+      color: var(--ink);
+      line-height: 1.4;
+    }
+    #facesList strong { color: var(--accent); font-weight: 600; }
     .mem-list {
       overflow: auto;
-      padding: 10px 12px 16px;
+      padding: 10px 12px 14px;
       display: grid;
       gap: 8px;
-      flex: 1;
+      flex: 1 1 auto;
+      min-height: 0;
+      align-content: start;
     }
     .mem {
       padding: 10px 12px;
-      border-radius: 12px;
+      border-radius: 10px;
       border: 1px solid var(--line);
-      animation: rise 0.4s ease both;
+      background: rgba(0,0,0,0.15);
     }
     .mem .top {
       display: flex;
       justify-content: space-between;
       gap: 8px;
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
     .mem .exp { color: var(--accent); }
-    .mem p { margin: 0; font-size: 0.86rem; line-height: 1.4; }
-    .ask-box {
-      margin: 12px;
-      padding: 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(240, 163, 107, 0.4);
-      background: rgba(240, 163, 107, 0.08);
-      display: none;
-    }
-    .ask-box.show { display: block; animation: rise 0.35s ease both; }
-    .ask-box h3 {
-      margin: 0 0 8px;
-      font-size: 0.75rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--warm);
-      font-weight: 600;
+    .mem p {
+      margin: 0;
+      font-size: 0.82rem;
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
     footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
       color: var(--muted);
-      font-size: 0.75rem;
-      animation: rise 1s ease both;
+      font-size: 0.72rem;
+      min-height: 0;
     }
-    .fb { display: flex; gap: 8px; }
     .busy { opacity: 0.55; pointer-events: none; }
-    @keyframes rise {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: none; }
-    }
     @keyframes pulse {
       0% { box-shadow: 0 0 0 0 rgba(107, 207, 142, 0.45); }
       70% { box-shadow: 0 0 0 10px rgba(107, 207, 142, 0); }
       100% { box-shadow: 0 0 0 0 rgba(107, 207, 142, 0); }
+    }
+    @media (max-width: 980px) {
+      body { overflow: auto; }
+      .shell { height: auto; min-height: 100%; }
+      main {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+      .stage { min-height: 70vh; }
+      .side { min-height: 50vh; }
+      .utter { max-height: none; }
     }
   </style>
 </head>
@@ -266,23 +364,34 @@
 
     <main>
       <section class="stage" id="stage">
+        <div id="previewWrap" class="empty">
+          <div class="eye-label">Œil · <strong id="eyeStatus">en attente</strong></div>
+          <img id="previewImg" alt="capture caméra" />
+          <div class="eye-ph">Appuie sur Voir — l’image s’affiche ici tout de suite</div>
+        </div>
         <div class="utter" id="utter"><span class="ghost">En attente d’une perception…</span></div>
         <div class="log" id="log"></div>
-        <div>
-          <div class="actions" style="margin-bottom:12px">
+        <div class="controls">
+          <div class="actions">
             <button class="primary" id="btnHear">Écouter</button>
             <button id="btnSee">Voir</button>
             <button id="btnSpeakLast">Relire</button>
             <button class="warn" id="btnVoice">Voix auto</button>
           </div>
+          <div class="actions">
+            <button id="btnVolDown" title="Baisser le volume">Vol −</button>
+            <button id="btnVolMute" title="Couper / rétablir">Mute</button>
+            <button id="btnVolUp" title="Monter le volume">Vol +</button>
+            <button id="btnVolLabel" disabled>— %</button>
+          </div>
           <div class="composer">
             <textarea id="msg" rows="2" placeholder="Écrire une perception / un nom / une correction…"></textarea>
             <button class="primary" id="btnSend">Envoyer</button>
           </div>
-          <div class="fb" style="margin-top:10px">
+          <div class="fb">
             <button id="btnYes">Oui / bien</button>
             <button id="btnNo">Non / faux</button>
-            <button id="btnKimi" class="primary" title="Consulter Kimi via Puter.js (tutoriel free unlimited)">Kimi ON</button>
+            <button id="btnVision" class="primary" title="Provider vision: NVIDIA (OpenClaw) ou Puter/Kimi">Vision NVIDIA</button>
           </div>
         </div>
       </section>
@@ -291,6 +400,14 @@
         <div class="side-head">
           <h2>Mémoires</h2>
           <span id="memCount">0</span>
+        </div>
+        <div class="faces-box" id="facesBox">
+          <h3>Visages liés</h3>
+          <div id="facesList">aucun encore</div>
+        </div>
+        <div class="faces-box" id="voicesBox" style="border-color: rgba(224,160,106,0.35); background: rgba(224,160,106,0.06);">
+          <h3 style="color: var(--warm);">Voix liées</h3>
+          <div id="voicesList">aucune encore</div>
         </div>
         <div class="ask-box" id="askBox">
           <h3>Demande à l’humain</h3>
@@ -305,7 +422,7 @@
     </main>
 
     <footer>
-      <span>Sur ce portable · Kimi (Puter) = outil de consultation · pas l’identité</span>
+      <span>Sur ce portable · Kimi (Puter) = outil · pas l’identité</span>
       <span id="clock">—</span>
     </footer>
   </div>
@@ -315,7 +432,7 @@
     let lastUtterance = "";
     let voiceOn = false;
     let busy = false;
-    let useKimi = true;
+    let visionProvider = "nvidia"; // nvidia | puter
     const KIMI_MODEL = "moonshotai/kimi-k2";
 
     function setBusy(v) {
@@ -332,67 +449,102 @@
 
     function showUtter(text, ghost) {
       lastUtterance = text || "";
-      if (!text) {
-        $("utter").innerHTML = '<span class="ghost">' + (ghost || "…") + "</span>";
-        return;
+      if (ghost) {
+        $("utter").innerHTML = '<span class="ghost"></span>';
+        $("utter").querySelector(".ghost").textContent = ghost;
+      } else {
+        $("utter").textContent = text || "";
       }
-      $("utter").textContent = text;
-    }
-
-    function extractPuterText(response) {
-      if (response == null) return "";
-      if (typeof response === "string") return response.trim();
-      if (typeof response === "object") {
-        if (typeof response.text === "string") return response.text.trim();
-        if (response.message) {
-          const c = response.message.content;
-          if (typeof c === "string") return c.trim();
-          if (c != null) return String(c).trim();
-        }
-        if (typeof response.toString === "function") {
-          const s = response.toString();
-          if (s && s !== "[object Object]") return s.trim();
-        }
-      }
-      return String(response).trim();
-    }
-
-    async function consultKimi(perception, memoriesHint) {
-      if (!useKimi || typeof puter === "undefined" || !puter.ai || !puter.ai.chat) {
-        return null;
-      }
-      const system =
-        "Tu es un OUTIL de consultation pour un organisme mémoire quasi vide (MemorySystemAI). " +
-        "Tu n'es PAS l'organisme. Aide à INTERPRÉTER une perception. " +
-        "Réponds en français, factuel, court. " +
-        "Si tu n'as pas assez d'info : réponds exactement JE NE SAIS PAS.\n" +
-        "Mémoires connues:\n" + (memoriesHint || "(presque vide)");
-      const prompt =
-        "Perception brute:\n" + perception + "\n\nQue puis-je en comprendre / apprendre ?\n\n" + system;
-      pushLog("consult Kimi (" + KIMI_MODEL + ")…");
-      const response = await puter.ai.chat(prompt, { model: KIMI_MODEL });
-      const text = extractPuterText(response);
-      return text || null;
     }
 
     async function api(path, opts) {
       const r = await fetch(path, opts);
       if (!r.ok) throw new Error(path + " " + r.status);
-      return r.json();
+      const ct = r.headers.get("content-type") || "";
+      if (ct.includes("application/json")) return r.json();
+      return r;
+    }
+
+    async function consultKimi(perception, memoriesHint) {
+      if (!window.puter || !puter.ai) throw new Error("Puter.js indisponible");
+      const system =
+        "Tu es un OUTIL de consultation pour un organisme mémoire quasi vide. " +
+        "Réponds en français, court, factuel. Tu n'es PAS l'organisme.\n" +
+        "Mémoires connues:\n" + (memoriesHint || "(presque vide)");
+      const out = await puter.ai.chat(
+        [{ role: "system", content: system }, { role: "user", content: perception }],
+        { model: KIMI_MODEL }
+      );
+      return typeof out === "string" ? out : (out?.message?.content || String(out));
+    }
+
+    async function refreshVolume(vol) {
+      if (!vol) {
+        try { vol = await api("/volume"); } catch (_) { return; }
+      }
+      const pct = vol.percent;
+      const muted = vol.muted;
+      $("btnVolLabel").textContent = muted ? "MUTE" : ((pct != null ? pct : "—") + " %");
     }
 
     async function refresh() {
       try {
         const st = await api("/status");
-        const puterSrv = st.puter && st.puter.enabled ? " · Puter token OK" : " · Kimi navigateur";
+        if (st.vision && st.vision.provider) {
+          visionProvider = st.vision.provider;
+          updateVisionBtn();
+        }
+        const vis = st.vision || {};
+        const visHint = " · vision " + (vis.provider || "?");
+        const cam = st.camera_sensor && st.camera_sensor.controls;
+        const camHint = cam
+          ? (" · cam b" + cam.brightness + "/g" + cam.gamma)
+          : (st.camera ? " · caméra" : "");
+        const ttsHint = (st.tts && st.tts.piper) ? " · piper" : "";
         $("stats").textContent =
           (st.memories || 0) + " mémoires · " +
           (st.bootstrap_only_meta ? "ardoise méta" : "apprend") +
-          (st.camera ? " · caméra" : "") +
-          puterSrv;
+          camHint + ttsHint + visHint;
         $("clock").textContent = st.time || "";
         $("live").textContent = "en ligne";
         $("dot").style.background = "var(--ok)";
+
+        const fl = $("facesList");
+        if (fl) {
+          const vis = st.visual || {};
+          const persons = vis.persons || [];
+          if (!persons.length) {
+            fl.textContent = "aucun encore — Voir puis « c'est moi Vincent »";
+          } else {
+            fl.innerHTML = persons.map(p =>
+              "<div><strong>" + (p.label || p.id) + "</strong> · " +
+              p.id + " · e" + (p.exposant || "?") +
+              " · vu " + (p.seen_count || 0) + "× · " +
+              (p.embeddings || 0) + " empreinte(s)</div>"
+            ).join("");
+            if (vis.pending) {
+              fl.innerHTML += "<div style='margin-top:4px;color:var(--muted)'>en attente de nom : " + vis.pending + "</div>";
+            }
+          }
+        }
+        const vl = $("voicesList");
+        if (vl) {
+          const vo = st.voice || {};
+          const persons = vo.persons || [];
+          if (!persons.length) {
+            vl.textContent = "aucune encore — Écouter puis « c'est moi Vincent »";
+          } else {
+            vl.innerHTML = persons.map(p =>
+              "<div><strong>" + (p.label || p.id) + "</strong> · " +
+              p.id + " · e" + (p.exposant || "?") +
+              " · entendu " + (p.seen_count || 0) + "× · " +
+              (p.embeddings || 0) + " empreinte(s)</div>"
+            ).join("");
+            if (vo.pending) {
+              vl.innerHTML += "<div style='margin-top:4px;color:var(--muted)'>en attente de nom : " + vo.pending + "</div>";
+            }
+          }
+        }
 
         const ask = st.ask_pending;
         if (ask && ask.status === "pending" && ask.question) {
@@ -406,7 +558,11 @@
         $("memCount").textContent = mem.count;
         const box = $("mems");
         box.innerHTML = "";
-        const entries = (mem.entries || []).slice().reverse();
+        const skip = ["message reçu:", "feedback humain:"];
+        const entries = (mem.entries || []).slice().reverse().filter(e => {
+          const d = (e.data || "").toLowerCase();
+          return !skip.some(p => d.startsWith(p));
+        }).slice(0, 40);
         for (const e of entries) {
           const d = document.createElement("div");
           d.className = "mem";
@@ -417,7 +573,13 @@
           d.querySelector("p").textContent = e.data;
           box.appendChild(d);
         }
-      } catch (err) {
+        if (st.volume) await refreshVolume(st.volume);
+        // Dernière capture connue (au chargement / refresh)
+        const last = st.camera_sensor && st.camera_sensor.last_preview;
+        if (last && $("previewWrap").classList.contains("empty")) {
+          showPreview(last, "dernière capture");
+        }
+      } catch (e) {
         $("live").textContent = "hors ligne";
         $("dot").style.background = "var(--danger)";
       }
@@ -426,29 +588,35 @@
     async function perceive(text, speak) {
       if (!text || busy) return;
       setBusy(true);
-      pushLog("→ " + text);
-      showUtter("", useKimi ? "Je consulte Kimi…" : "Je perçois…");
+      showUtter("", "Je réfléchis…");
       try {
         let interpretation = null;
-        try {
-          interpretation = await consultKimi(text, "(mémoires locales sur le nœud)");
-        } catch (e) {
-          pushLog("Kimi navigateur: " + e.message + " → fallback serveur");
+        let llmSource = null;
+        // Texte: laisser le serveur choisir (mémoire d'abord). Puter.js seulement si vision=puter.
+        if (visionProvider === "puter") {
+          try {
+            const mem = await api("/memories");
+            const hint = (mem.entries || []).slice(-8).map(e => e.data).join("\n");
+            interpretation = await consultKimi(text, hint);
+            llmSource = "puter.js:" + KIMI_MODEL;
+          } catch (e) {
+            pushLog("Kimi navigateur indisponible: " + e.message);
+          }
         }
         const body = { text, speak: !!speak };
         if (interpretation) {
           body.interpretation = interpretation;
-          body.llm_source = "puter-js:" + KIMI_MODEL;
+          body.llm_source = llmSource;
         }
         const res = await api("/perceive", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
-        const u = (res.result && res.result.utterance) || "(silence)";
+        const r = res.result || {};
+        const u = r.utterance || interpretation || "(silence)";
         showUtter(u);
-        const src = (res.result && (res.result.llm_source || res.result.source)) || "?";
-        pushLog("← " + u + " [" + src + "]");
+        pushLog("← [" + (r.source || "?") + "] " + u.slice(0, 140));
         await refresh();
       } catch (e) {
         showUtter("Erreur: " + e.message);
@@ -457,24 +625,17 @@
       }
     }
 
-    $("btnKimi").onclick = () => {
-      useKimi = !useKimi;
-      $("btnKimi").textContent = useKimi ? "Kimi ON" : "Kimi OFF";
-      $("btnKimi").classList.toggle("primary", useKimi);
-      pushLog(useKimi ? "outil Kimi (Puter) activé" : "outil Kimi désactivé → Ollama local");
-    };
-
     $("btnSend").onclick = () => {
       const t = $("msg").value.trim();
       $("msg").value = "";
       perceive(t, false);
     };
-    $("msg").addEventListener("keydown", (ev) => {
+    $("msg").onkeydown = (ev) => {
       if (ev.key === "Enter" && !ev.shiftKey) {
         ev.preventDefault();
         $("btnSend").click();
       }
-    });
+    };
 
     $("btnHear").onclick = async () => {
       if (busy) return;
@@ -484,42 +645,89 @@
         const res = await api("/hear", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ seconds: 4, speak: false }),
+          body: JSON.stringify({ seconds: 4, speak: true }),
         });
-        setBusy(false);
-        if (res.heard) {
-          pushLog("entendu: " + res.heard);
-          await perceive(res.heard, true);
-        } else {
-          showUtter(res.note || "(rien)");
-          await refresh();
+        const heard = res.heard || "";
+        const r = res.result || {};
+        showUtter(r.utterance || heard || "(silence)");
+        pushLog("← entendu: " + (heard || res.note || "?"));
+        const voice = res.voice || r.voice;
+        if (voice && voice.recognized) {
+          pushLog("← voix reconnue: " + (voice.recognized.label || voice.recognized.id) +
+            " (" + voice.recognized.score + ")");
+        } else if (voice && voice.unknown) {
+          pushLog("← voix inconnue: " + voice.unknown.id + " → dis qui c'est");
         }
+        await refresh();
       } catch (e) {
-        showUtter("Erreur écoute: " + e.message);
+        showUtter("Erreur micro: " + e.message);
+      } finally {
         setBusy(false);
       }
     };
 
+    function showPreview(url, statusText) {
+      const wrap = $("previewWrap");
+      const img = $("previewImg");
+      const st = $("eyeStatus");
+      if (!url) return;
+      wrap.classList.remove("empty");
+      if (st) st.textContent = statusText || "capture";
+      img.onload = () => { if (st) st.textContent = statusText || "vu"; };
+      img.onerror = () => { if (st) st.textContent = "erreur image"; };
+      img.src = url + (url.includes("?") ? "&" : "?") + "t=" + Date.now();
+    }
+
     $("btnSee").onclick = async () => {
       if (busy) return;
       setBusy(true);
-      showUtter("", "Je regarde…");
+      showUtter("", "Je regarde… (capture)");
+      $("eyeStatus").textContent = "capture…";
+      let capturePath = null;
       try {
+        // 1) Capture immédiate → affichage UI avant Kimi
+        const cap = await api("/capture", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ auto_tune: true }),
+        });
+        if (cap.preview) {
+          showPreview(cap.preview, "capturé — j’interprète…");
+          pushLog("← œil: image affichée " + cap.preview);
+        }
+        if (cap.sensor && cap.sensor.adjusted) {
+          const lum = cap.sensor.luminance || {};
+          const after = cap.sensor.luminance_after || {};
+          pushLog(
+            "← capteur auto: lum " + (lum.center || lum.mean) +
+            " → " + (after.center || after.mean || "?")
+          );
+        }
+        capturePath = cap.path || null;
+
+        showUtter("", "Je regarde… (interprétation)");
+        // 2) Vision / mémoire sur la même image
         const res = await api("/see", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ speak: false }),
+          body: JSON.stringify({ speak: true, path: capturePath }),
         });
-        const frame = res.result && res.result.frame;
-        const raw = (frame && frame.raw) || "frame caméra";
-        const path = (frame && frame.path) || "";
-        setBusy(false);
-        await perceive(
-          "Image caméra capturée (" + path + "). Données: " + raw + ". Que puis-je en comprendre ?",
-          false
-        );
+        const r = res.result || {};
+        const u = r.utterance || "(silence)";
+        showUtter(u);
+        pushLog("← vu [" + (r.llm_source || r.source || "?") + "] " + u.slice(0, 120));
+        if (r.visual) {
+          const rec = (r.visual.recognized || []).map(x => x.label || x.id).join(", ");
+          const unk = (r.visual.unknown || []).map(x => x.id).join(", ");
+          if (rec) pushLog("← visage reconnu: " + rec);
+          if (unk) pushLog("← visage inconnu: " + unk + " → dis qui c'est");
+        }
+        if (r.preview) showPreview(r.preview, "interprété");
+        await refresh();
       } catch (e) {
         showUtter("Erreur vision: " + e.message);
+        $("eyeStatus").textContent = "erreur";
+      } finally {
         setBusy(false);
       }
     };
@@ -545,20 +753,62 @@
         body: JSON.stringify({ answer }),
       });
       $("askA").value = "";
-      pushLog("réponse humaine envoyée");
       await refresh();
+    };
+
+    $("btnVolDown").onclick = async () => {
+      await api("/volume", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ delta: -8 }) });
+      await refreshVolume();
+    };
+    $("btnVolUp").onclick = async () => {
+      await api("/volume", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ delta: 8 }) });
+      await refreshVolume();
+    };
+    $("btnVolMute").onclick = async () => {
+      await api("/volume", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mute: null }) });
+      await refreshVolume();
     };
 
     $("btnVoice").onclick = async () => {
       voiceOn = !voiceOn;
       $("btnVoice").textContent = voiceOn ? "Voix ON" : "Voix auto";
-      $("btnVoice").classList.toggle("primary", voiceOn);
       await api("/voice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: voiceOn }),
       });
     };
+
+    function updateVisionBtn() {
+      const btn = $("btnVision");
+      if (!btn) return;
+      const nvidia = visionProvider === "nvidia";
+      btn.textContent = nvidia ? "Vision NVIDIA" : "Vision Puter";
+      btn.classList.toggle("primary", nvidia);
+      btn.classList.toggle("warn", !nvidia);
+      btn.title = nvidia
+        ? "Analyse image via NVIDIA (OpenClaw / build.nvidia) — pas de crédits Puter"
+        : "Analyse image via Puter/Kimi — consomme des crédits Puter";
+    }
+
+    $("btnVision").onclick = async () => {
+      const next = visionProvider === "nvidia" ? "puter" : "nvidia";
+      try {
+        const r = await api("/vision", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ provider: next }),
+        });
+        visionProvider = r.provider || next;
+        updateVisionBtn();
+        pushLog("← vision provider: " + visionProvider +
+          (visionProvider === "nvidia" ? (" · " + (r.nvidia_model || "")) : (" · " + (r.puter_model || ""))));
+        await refresh();
+      } catch (e) {
+        pushLog("vision switch fail: " + e.message);
+      }
+    };
+    updateVisionBtn();
 
     refresh();
     setInterval(refresh, 4000);

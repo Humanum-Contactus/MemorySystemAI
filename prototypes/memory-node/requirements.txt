@@ -1,0 +1,10 @@
+#memorysystemai
+#numpy
+#opencv-python-headless  # optional face crop
+#faster-whisper          # STT on hear
+#Pillow                  # optional image fallback
+
+# Runtime notes:
+# - ALSA (arecord, amixer), V4L2 (v4l2-ctl, ffmpeg)
+# - Piper TTS optional under tts/
+# - MemorySystemAI package from repo root on PYTHONPATH

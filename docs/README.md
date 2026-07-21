@@ -2,8 +2,9 @@
 
 | Document | Contenu |
 |----------|---------|
-| [`EVOLUTION_MEMORY_NODE_2026-07.md`](EVOLUTION_MEMORY_NODE_2026-07.md) | Chronique complète : du concept au prototype incarné |
-| [`ARCHITECTURE_MEMORY_NODE.md`](ARCHITECTURE_MEMORY_NODE.md) | Architecture, API, flux mémoire vs LLM |
+| [`EVOLUTION_MEMORY_NODE_2026-07.md`](EVOLUTION_MEMORY_NODE_2026-07.md) | Chronique : du concept au prototype incarné (phases A–I) |
+| [`ARCHITECTURE_MEMORY_NODE.md`](ARCHITECTURE_MEMORY_NODE.md) | Architecture, API HTTP, flux mémoire vs LLM |
+| [`MODULES_MEMORY_NODE.md`](MODULES_MEMORY_NODE.md) | Référence des modules runtime (organism, sens, capteurs) |
 | [`SENSORS_AND_MEMORY_SYSTEM_AI.md`](SENSORS_AND_MEMORY_SYSTEM_AI.md) | Proposition de nommage Sensors&MemorySystemAI |
 | [`POURQUOI_CA_COMPTE.md`](POURQUOI_CA_COMPTE.md) | Sens de la recherche, finalité, ce que ce n’est pas |
 | [`../prototypes/memory-node/README.md`](../prototypes/memory-node/README.md) | Guide du prototype runtime |
@@ -13,3 +14,5 @@
 | [`../05_ANALYSE_PHILOSOPHIQUE.txt`](../05_ANALYSE_PHILOSOPHIQUE.txt) | Analyse philosophique |
 
 Prototype code : [`../prototypes/memory-node/`](../prototypes/memory-node/).
+
+> Le journal de session privé (`JOURNAL_COGITATION_BEBE_IA.txt`) n’est **pas** publié.

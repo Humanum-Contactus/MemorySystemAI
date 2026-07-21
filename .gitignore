@@ -1,9 +1,17 @@
 # Secrets & runtime — never commit
 **/puter_token.txt
+**/nvidia_token.txt
 **/ask_human.json
 **/ask_poller_state.json
+**/visual_persons.json
+**/voice_persons.json
 **/.venv/
 **/state/
 *.pem
 .env
 .env.*
+**/_teach_*.json
+
+# Private session journal (do not publish)
+docs/JOURNAL_COGITATION_BEBE_IA.txt
+JOURNAL_COGITATION_BEBE_IA.txt

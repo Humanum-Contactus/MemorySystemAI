@@ -99,22 +99,57 @@ Réécriture :
 5. Re-question → **`source: memory`** (sans Kimi).  
 6. Ask Telegram + réponse intégrée (exposant 8).
 
+### Phase H — Capteurs & identité (suite juillet 2026)
+
+| Brique | Contenu |
+|--------|---------|
+| Vision réelle | JPEG `/see` → NVIDIA NIM (défaut) ou Puter ; switch UI/API |
+| Visages | `visual_memory.py` — empreintes locales, teach « c'est moi Vincent » |
+| Voix | `voice_memory.py` — empreintes spectrales, même teach |
+| Caméra auto | `sensor_camera.py` — luminosité → brightness/gamma/exposure |
+| Micro auto | `sensor_mic.py` — RMS/peak → Capture / Mic Boost (souvent *saturation*, pas trop faible) |
+| TTS | Piper `fr_FR-siwis-medium` préféré |
+| Clavier kiosk | disposition CH_FR |
+
+### Phase I — Mémoires = normes (pas tables `.py`)
+
+Corrections d’architecture alignées sur le concept :
+
+1. **Anti-harcèlement ask** — mémoire C/N/e9 (tags `harceler`, `sans_attendre`, …).  
+   `request_human()` ne spam pas une ask pending ; utterance = texte de la mémoire.  
+   Suppression des rate-limits fichier / listes de phrases dans le code.
+
+2. **Corrections STT** — mémoires O  
+   `Correction auditive: « c'est mauve ca » → « c'est moi Vincent »`.  
+   Le runtime lit/applique/renforce ; enseignement possible en langage naturel.
+
+3. **Inhibition** — uniquement via **tags** + exposant.  
+   Bug corrigé : les mémoires e9 « Visage reconnu: Vincent » ne doivent plus  
+   bloquer la phrase « c'est moi Vincent » (faux « Je m'abstiens »).
+
+4. **Pont OpenClaw** — assumé comme *relais*, pas comme cœur.  
+   Risque conscient : retomber en logique chatbot si on grossit ce canal.
+
 ---
 
 ## 3. Architecture résultante
 
 ```
-[Nursery kiosk laptop]              [Telegram / humain]
+[Nursery kiosk laptop]              [Telegram / humain — pont]
          │                                    │
          ▼                                    ▼
    organism.py :8765  ◄──────────  OpenClaw (skill + poller)
          │
-         ├─ MemorySystem (fondamentaux / exposants)
-         ├─ outils see / hear / speak
-         └─ consult LLM : Puter/Kimi → Ollama
+         ├─ MemorySystem (fondamentaux / exposants / tags)
+         ├─ visual_memory + voice_memory
+         ├─ sensor_camera + sensor_mic
+         ├─ outils see / hear / speak (Piper)
+         └─ consult LLM : NVIDIA → Puter → Ollama
 ```
 
-Détail API / env : [`ARCHITECTURE_MEMORY_NODE.md`](ARCHITECTURE_MEMORY_NODE.md).
+Détail API / modules :
+[`ARCHITECTURE_MEMORY_NODE.md`](ARCHITECTURE_MEMORY_NODE.md) ·
+[`MODULES_MEMORY_NODE.md`](MODULES_MEMORY_NODE.md).
 
 ---
 
@@ -128,6 +163,9 @@ Détail API / env : [`ARCHITECTURE_MEMORY_NODE.md`](ARCHITECTURE_MEMORY_NODE.md)
 | Toujours appeler Kimi | Rejeté après correctif recall |
 | Contrôle seulement en SSH | Rejeté → nursery locale |
 | Kimi K3 dès le départ | Downgrade volontaire à K2 pour l’élevage |
+| Rate-limit ask dans un `.json` / `.py` | Rejeté → mémoire sociale |
+| Table regex STT « mauve→Vincent » dans le code | Rejeté → mémoires Correction auditive |
+| Inhibition = tous les e9 qui partagent des mots | Rejeté → tags seulement |
 
 ---
 
@@ -136,20 +174,28 @@ Détail API / env : [`ARCHITECTURE_MEMORY_NODE.md`](ARCHITECTURE_MEMORY_NODE.md)
 1. Commencer par un chatbot **tue** le concept immédiatement.  
 2. Enregistrer ≠ rappeler — sans priorité mémoire, le LLM masque l’apprentissage.  
 3. L’enseignement humain (`X est Y`) doit monter l’exposant (~8).  
-4. Ask Telegram : notif OK ; skill `answer` à solidifier.  
+4. Ask Telegram : utile comme pont ; grossir ce canal = risque chatbot.  
 5. Secrets hors dépôt.  
-6. Le nom **Sensors&MemorySystemAI** colle mieux à la finalité.
+6. Le nom **Sensors&MemorySystemAI** colle mieux à la finalité.  
+7. **Norme apprise = entrée mémoire**, mécanisme = code qui lit les tags.  
+8. Capteur trop fort (micro saturé) gêne autant que trop faible.  
+9. Le danger n’est plus « ne pas avancer », c’est avancer **hors concept**.
 
 ---
 
-## 6. Suite (hors premier jet)
+## 6. Suite (priorités concept)
 
-- [ ] Inhibition avant **actions machines** (SSH/sudo/disk)  
-- [ ] Multi-nœuds + divergence d’exposants  
-- [ ] Dégradation temporelle / consolidation  
-- [ ] Vision LLM réelle  
-- [ ] Relais Telegram `answer` 100 % automatique  
-- [ ] Réduire le bruit de journal dans l’index  
+Aligné sur le diagnostic interne du chantier :
+
+| Point | État | Priorité |
+|-------|------|----------|
+| Fundamental & State | heuristique fragile | Haute |
+| Similarité sémantique | chevauchement de mots | Haute |
+| Corroboration multi-sens | partielle (visage+voix teach) | Haute |
+| Moins de dépendance LLM / OpenClaw | encore forte | Haute |
+| Apprentissage plus « enfantin » | basique | Moyenne |
+| Mode plus actif | encore passif | Moyenne |
+| Inhibition actions machines (SSH/sudo) | pas câblée | Moyenne |
 
 ---
 
@@ -158,18 +204,21 @@ Détail API / env : [`ARCHITECTURE_MEMORY_NODE.md`](ARCHITECTURE_MEMORY_NODE.md)
 | Chemin | Rôle |
 |--------|------|
 | `prototypes/memory-node/organism.py` | Runtime organisme |
+| `prototypes/memory-node/visual_memory.py` | Identité V |
+| `prototypes/memory-node/voice_memory.py` | Identité O |
+| `prototypes/memory-node/sensor_camera.py` | Auto caméra |
+| `prototypes/memory-node/sensor_mic.py` | Auto micro |
 | `prototypes/memory-node/ui/` | Nursery |
 | `prototypes/memory-node/openclaw-skill/` | Pont agent/Telegram |
 | `prototypes/memory-node/systemd/` | Exemple service |
 | `memory_system.py` | Cœur MemorySystemAI |
-| `01_CONCEPT_FONDAMENTAL.txt` | Concept |
-| `04_FEUILLE_DE_ROUTE.txt` | Roadmap historique |
+| `docs/MODULES_MEMORY_NODE.md` | Référence modules |
 | `docs/*` | Documentation évolution |
 
 ---
 
 ## 8. Remerciements / provenance
 
-Concept et finalité : **Vincent Vermeille**.  
+Concept et finalité : **Vincent Vermeille** (Humanum-Contactus).  
 Incarnation prototype juillet 2026 : collaboration humaine + agent Cursor sur le LAN,
 en restant fidèle à l’idée d’origine (pas un gadget chatbot).

@@ -5,25 +5,31 @@
 ```
                     ┌─────────────────────────────────────┐
                     │         HUMAIN (tuteur)             │
-                    │  nursery locale  ·  Telegram/OpenClaw│
+                    │  nursery locale  ·  (Telegram pont) │
                     └──────────────┬──────────────────────┘
                                    │ perceive / answer / feedback
                                    ▼
 ┌──────────────────────────────────────────────────────────────┐
 │  organism.py  (HTTP :8765)                                   │
 │                                                              │
-│  1. Réception     texte | hear | see                         │
-│  2. Rappel        MemorySystem.recall (prioritaire)          │
-│  3. Consultation  Puter/Kimi → Ollama   (si mémoire insuff.) │
-│  4. Ask human     /ask pending          (si LLM ne sait pas) │
-│  5. Enregistrement fondamentaux + exposant + source          │
-│  6. Expression    utterance (+ speak optionnel)              │
+│  1. Réception      texte | hear | see                        │
+│  2. Capteurs       camera auto-tune · mic auto-gain          │
+│  3. Identité       visual_memory · voice_memory              │
+│  4. Correction O   mémoires « Correction auditive »          │
+│  5. Inhibition     tags + exposant (pas chevauchement aveugle)│
+│  6. Rappel         MemorySystem.recall (prioritaire)         │
+│  7. Consultation   NVIDIA / Puter / Ollama  (outil)          │
+│  8. Ask human      request_human + mémoire anti-harcèlement  │
+│  9. Enregistrement fondamentaux + exposant + source          │
+│ 10. Expression     utterance (+ speak / Piper)               │
 └──────────────┬───────────────────────────┬───────────────────┘
                │                           │
                ▼                           ▼
      memory_index.json              outils OS
-     (MemorySystemAI core)          caméra / micro / espeak
+     (MemorySystemAI core)          caméra / micro / TTS
 ```
+
+Référence modules : [`MODULES_MEMORY_NODE.md`](MODULES_MEMORY_NODE.md).
 
 ## Séparation des rôles
 
@@ -31,48 +37,46 @@
 |-----------|------|-----------|
 | `MemorySystem` | stocker, scorer, inhiber | un LLM |
 | `organism.py` | boucle sensorielle + API | un chatbot persona |
-| Puter/Kimi / Ollama | interpréter une perception | l’identité du bébé |
-| OpenClaw / Telegram | relais humain distant | le système de mémoire |
+| Mémoires à tags | normes apprises (harcèlement, STT…) | des `if` hardcodés dans le `.py` |
+| NVIDIA / Puter / Ollama | interpréter une perception | l’identité du bébé |
+| OpenClaw / Telegram | relais humain distant (**pont**) | le système de mémoire |
+| `ask_human.json` | boîte aux lettres | la règle « ne pas spammer » |
 | Nursery UI | présence locale | un dashboard générique |
 
-## Boucle décisionnelle (détail)
+## Boucle décisionnelle
 
 ```
 perception
   │
-  ├─ inhibition mémoire (exposant élevé + tags) ──► abstention
+  ├─ (hear) repair via mémoires Correction auditive
+  │
+  ├─ inhibition mémoire (tags + exposant ≥ 9) ──► abstention
+  │     utterance = « je m'abstiens de X » + mémoire N°…
   │
   ├─ usable_memory_answer ? ──oui──► source: memory  (pas de LLM)
   │
-  ├─ interprétation externe (Puter.js nursery) ?
-  │
-  ├─ tool_consult_llm (Puter token puis Ollama)
+  ├─ tool_consult_llm (NVIDIA texte / Puter / Ollama)
   │     ├─ OK ──► apprendre interprétation (I) + perçu
   │     └─ JE NE SAIS PAS / fail
-  │              ├─ réponse humaine fraîche pertinente ?
-  │              └─ sinon tool_ask_human → source: ask-human
+  │              └─ request_human
+  │                    ├─ pending déjà là + mémoire anti-harcèlement → wait
+  │                    └─ sinon ask pending (canal)
   ▼
 utterance
 ```
 
-### Règles d’apprentissage (prototype)
+### Inhibition : piège évité
 
-- Perception / message → souvent exposant **5** (journal).
-- Enseignement factuel humain (`X est Y`, sans `?`) → exposant **8**, préfixe « Fait enseigné… ».
-- Réponse à `/ask/answer` → exposant **8**, « Réponse humaine intégrée… ».
-- Feedback positif / négatif → états **P** / **N**, exposant renforcé.
-- Bootstrap au reset → **6 entrées méta** seulement (pas de savoir du monde).
+**Ne pas** matcher toutes les mémoires e≥9 par chevauchement de mots  
+(sinon « Vincent » bloquait l’enseignement « c'est moi Vincent »).
 
-### Rappel mémoire avant LLM
+**Oui** : `inhibition_tags` présents **et** `matches_tags(action)`.
 
-Le rappel pondère :
+### Ask human : piège chatbot
 
-- chevauchement lexical (bonus noms longs),
-- exposant,
-- source humaine / « Fait enseigné »,
-- malus sur le bruit de journal (`Message reçu:`, `Interprétation (`…).
-
-Objectif : **apprendre pour de vrai**, pas reconsulter Kimi à chaque fois.
+Le poller Telegram est un **pont**. La norme « ne pas harceler si pas de réponse »
+est une **mémoire** (ex. C/N/e9, tags `harceler|sans_attendre|…`).  
+`request_human()` consulte cette mémoire quand une ask est déjà pending.
 
 ## API HTTP
 
@@ -83,29 +87,42 @@ Base : `http://HOST:8765`
 | Route | Description |
 |-------|-------------|
 | `/` ou `/ui/` | Nursery HTML |
-| `/status` | rôle, nb mémoires, puter, voice_loop, ask_pending |
-| `/memories` | liste des entrées |
-| `/ask` | état demande humaine (`none` / `pending` / `answered` / `consumed`) |
+| `/status` | rôle, mémoires, vision, mic, camera, ask, faces/voices résumés |
+| `/memories` | liste des entrées index |
+| `/faces` `/visual` | personnes / pending visage |
+| `/voices` `/speakers` | personnes / pending voix |
+| `/ask` | boîte ask (`none` / `pending` / `answered` / `consumed`) |
+| `/volume` | Master playback (HP) |
+| `/camera` | contrôles V4L2 |
+| `/mic` | Capture / Mic Boost |
+| `/vision` | provider nvidia\|puter |
+| `/snapshot/<file>` | JPEG capturé |
 
 ### POST (JSON)
 
 | Route | Body typique | Effet |
 |-------|--------------|-------|
-| `/perceive` | `{ "text", "speak?", "interpretation?", "llm_source?" }` | cycle texte / conscience |
-| `/see` | `{ "speak?" }` | capture caméra + interprétation |
-| `/hear` | `{ "seconds?", "speak?" }` | enregistrement + STT + interprétation |
+| `/perceive` | `{ "text", "speak?" }` | cycle texte (+ teach identité / corrections) |
+| `/capture` | `{ "auto_tune?" }` | photo seule (+ auto caméra) |
+| `/see` | `{ "speak?", "path?" }` | vision + identité visuelle |
+| `/hear` | `{ "seconds?", "speak?", "auto_tune?" }` | micro + STT + cycle |
 | `/speak` | `{ "text" }` | TTS |
-| `/voice` | `{ "enabled": true\|false }` | boucle écoute continue |
-| `/ask/answer` | `{ "answer" }` | intègre réponse humaine (exposant 8) |
-| `/reset` | `{ "confirm": "RESET_ORGANISM" }` | ardoise → bootstrap méta |
-
-Exemple :
+| `/volume` | `{ "percent?"\|"delta?"\|"mute?" }` | HP |
+| `/camera` | `{ "auto":true }` ou contrôles | V4L2 |
+| `/mic` | `{ "auto":true }` ou `{ "capture":N }` | gain entrée |
+| `/vision` | `{ "provider":"nvidia\|puter" }` | switch vision |
+| `/voice` | `{ "enabled": true\|false }` | boucle écoute |
+| `/ask/answer` | `{ "answer" }` | intègre réponse (exposant 8) |
+| `/reset` | `{ "confirm":"RESET_ORGANISM" }` | ardoise → bootstrap méta |
 
 ```bash
 curl -s http://127.0.0.1:8765/status | jq .
 curl -s -X POST http://127.0.0.1:8765/perceive \
   -H 'Content-Type: application/json' \
-  -d '{"text":"Je m appelle Vincent. Retiens mon nom.","speak":false}'
+  -d '{"text":"c est moi Vincent","speak":false}'
+curl -s -X POST http://127.0.0.1:8765/mic \
+  -H 'Content-Type: application/json' \
+  -d '{"auto":true,"seconds":2}'
 ```
 
 ## Variables d’environnement
@@ -113,53 +130,36 @@ curl -s -X POST http://127.0.0.1:8765/perceive \
 | Variable | Défaut | Rôle |
 |----------|--------|------|
 | `AGENT_PORT` | `8765` | port HTTP |
-| `OLLAMA_HOST` | `http://127.0.0.1:11434` | Ollama local |
-| `OLLAMA_MODEL` | `qwen2.5:1.5b-instruct` | fallback local |
-| `OLLAMA_FALLBACK` | *(vide)* | second Ollama optionnel |
-| `PUTER_MODEL` | `moonshotai/kimi-k2` | modèle Puter |
-| `PUTER_AUTH_TOKEN` | — | sinon fichier `state/puter_token.txt` |
-| `PUTER_BASE` | API Puter OpenAI-compatible | endpoint |
-| `VOICE_LOOP` | — | `1` pour démarrer la boucle voix |
+| `VISION_PROVIDER` | `nvidia` | `nvidia` \| `puter` |
+| `NVIDIA_API_KEY` | — | sinon `state/nvidia_token.txt` |
+| `NVIDIA_VISION_MODEL` | `google/gemma-4-31b-it` | vision NIM |
+| `PUTER_AUTH_TOKEN` | — | sinon `state/puter_token.txt` |
+| `PUTER_MODEL` / `PUTER_VISION_MODEL` | kimi-* | Puter |
+| `OLLAMA_HOST` / `OLLAMA_MODEL` | local qwen | fallback |
+| `WHISPER_MODEL` | `base` | STT |
+| `VISION_FALLBACK_PUTER` | `0` | pas de fallback auto |
 
-## Fichiers runtime (hors git)
+## Apprentissage (exposants typiques)
 
-```
-/opt/memorysystemai/
-  organism.py
-  ui/index.html
-  MemorySystemAI/          # bibliothèque core
-  state/
-    puter_token.txt        # secret
-    ask_human.json
-    organism.log
-    snapshots/
-  MemorySystemAI/memory_index.json
-```
+| Événement | Fond. | État | Exp. |
+|-----------|-------|------|------|
+| Journal / perçu | C/O/V/I | X | ~5 |
+| Fait enseigné / réponse humaine | C | P | ~8 |
+| Identité visage / voix | V/O | P | ~8 |
+| Correction auditive enseignée | O | P | ~8 |
+| Anti-harcèlement social | C | N | ~9 |
+| Feedback + / − | C | P/N | +2 / +3 |
 
-## Pont OpenClaw / Telegram
+## Fichiers d’état (hors git)
 
 ```
-Humain --Telegram--> OpenClaw (skill baby-organism)
-                         │
-                         ├─ baby_api.py perceive|ask|answer
-                         ▼
-                   memory-node :8765
-
-ask_poller.py  : si /ask pending → notifie Telegram
+state/
+  puter_token.txt
+  nvidia_token.txt
+  ask_human.json          # canal
+  visual_persons.json
+  voice_persons.json
+  snapshots/
+  o_*.wav
+MemorySystemAI/memory_index.json
 ```
-
-Env skill / poller : `MEMORY_NODE_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`.
-
-## Nursery (UI)
-
-- Boutons : Écouter, Voir, Envoyer, Oui/Non, Kimi ON/OFF, Voix auto
-- Puter.js optionnel pour consultation navigateur
-- Liste des mémoires + panneau ask humain
-- Destinée au **kiosk local** (Chromium plein écran), pas au contrôle distant SSH
-
-## Limites connues du premier jet
-
-- Inhibition surtout testée en dialogue ; pas encore hook systématique avant sudo/SSH.
-- STT / vision : dépendent du matériel et des paquets installés.
-- Relais Telegram `answer` : notif fiable ; exécution skill parfois à renforcer.
-- Bruit de journal encore présent dans l’index (à consolider plus tard).

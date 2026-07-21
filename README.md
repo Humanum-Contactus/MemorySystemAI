@@ -6,8 +6,11 @@
 A Python implementation of the MemorySystemAI whitepaper — giving AI agents the ability to remember traumatic experiences and automatically block dangerous actions before they happen.
 
 > **July 2026 — embodied prototype:** [`prototypes/memory-node/`](prototypes/memory-node/)  
-> Blank-slate laptop organism: sensors, exponent memory, LLM-as-tool, local nursery, Telegram tutoring.  
-> Full story: [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md) · [`docs/POURQUOI_CA_COMPTE.md`](docs/POURQUOI_CA_COMPTE.md)
+> Blank-slate laptop organism: sensors (vision/voice + auto gain), exponent memory,  
+> learned norms in `memory_index` (not hardcoded bans), LLM-as-tool, local nursery.  
+> Docs: [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md) ·  
+> [`docs/MODULES_MEMORY_NODE.md`](docs/MODULES_MEMORY_NODE.md) ·  
+> [`docs/POURQUOI_CA_COMPTE.md`](docs/POURQUOI_CA_COMPTE.md)
 
 ## The Problem
 

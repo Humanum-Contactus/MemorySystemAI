@@ -16,7 +16,16 @@ Please read before coding:
 1. [`01_CONCEPT_FONDAMENTAL.txt`](01_CONCEPT_FONDAMENTAL.txt)  
 2. [`docs/POURQUOI_CA_COMPTE.md`](docs/POURQUOI_CA_COMPTE.md)  
 3. [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md)  
-4. [`prototypes/memory-node/README.md`](prototypes/memory-node/README.md)
+4. [`docs/MODULES_MEMORY_NODE.md`](docs/MODULES_MEMORY_NODE.md)  
+5. [`prototypes/memory-node/README.md`](prototypes/memory-node/README.md)
+
+## Design rules (non-negotiable)
+
+- **No text bans as identity.** Inhibition = learned memories (exposant + tags).
+- **Norms live in `memory_index`**, not in Python lookup tables / rate-limit files.
+- **LLM is a tool**, not the organism’s persona.
+- Prefer sensory corroboration and memory-first recall over “just ask the model”.
+- Do not commit secrets (`state/*_token.txt`, `.env`, personal journals).
 
 ## Design rules (non-negotiable)
 
