@@ -1,5 +1,7 @@
 # Proposition de nommage — Sensors&MemorySystemAI
 
+> **FR** · EN below · [`LANGUES.md`](LANGUES.md)
+
 ## Pourquoi faire évoluer le nom ?
 
 **MemorySystemAI** met l’accent sur la mémoire (juste, central).  
@@ -43,3 +45,17 @@ affichant le nom long dans README / whitepaper v2.
 Le prototype est déjà aligné sur ce sens, quel que soit le libellé final.
 
 Voir aussi : [`POURQUOI_CA_COMPTE.md`](POURQUOI_CA_COMPTE.md).
+
+---
+
+## English (short)
+
+**Why evolve the name?** MemorySystemAI stresses memory (correct, central). The
+real aim is a **sensor + emotional-memory system** linking the world to decisions.
+Without **Sensors**, people mentally fall back to “JSON index + LLM talking on
+top” or disguised text rules. With Sensors, we name the real object: channels
+V/O/T/G/Od/I/C + physical tools, exposants, learned inhibition, loop architecture.
+
+Proposed display name: **Sensors&MemorySystemAI** (repo URL may stay historical).
+Decision: Vincent / Humanum-Contactus. See also [`en/WHY_IT_MATTERS.md`](en/WHY_IT_MATTERS.md).
+
