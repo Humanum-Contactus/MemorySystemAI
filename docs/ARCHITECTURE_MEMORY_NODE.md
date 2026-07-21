@@ -108,6 +108,8 @@ Base : `http://HOST:8765`
 | `/capture` | `{ "auto_tune?" }` | photo seule (+ auto caméra) |
 | `/see` | `{ "speak?", "path?" }` | vision + identité visuelle |
 | `/hear` | `{ "seconds?", "speak?", "auto_tune?" }` | micro + STT + cycle |
+| `/explore` | `{ "speak?", "ask_if_stuck?", "steps?" }` | cycle autonomie (mémoire+exposants) |
+| `/autonomy` | `{ "tool":"wonder"\|… }` | un outil d'exploration |
 | `/speak` | `{ "text" }` | TTS |
 | `/volume` | `{ "percent?"\|"delta?"\|"mute?" }` | HP |
 | `/camera` | `{ "auto":true }` ou contrôles | V4L2 |
