@@ -109,7 +109,14 @@ Réception → Évaluation → Enregistrement → Renforcement → Injection →
 ## Prototype incarné — `memory-node`
 
 → [`prototypes/memory-node/README.md`](prototypes/memory-node/README.md)  
-→ Chronique : [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md)
+→ Chronique : [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md)  
+→ Chronique octobre 2026 (contradictions) : [`docs/EVOLUTION_MEMORY_NODE_2026-10.md`](docs/EVOLUTION_MEMORY_NODE_2026-10.md)  
+→ **Installer et tester** : [`docs/INSTALLATION.md`](docs/INSTALLATION.md) · [`CHANGELOG.md`](CHANGELOG.md)
+
+```bash
+# test rapide, sans installation ni service
+python3 prototypes/memory-node/tests/test_contradictions.py
+```
 
 ## Feuille de route
 

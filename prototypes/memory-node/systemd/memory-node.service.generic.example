@@ -1,0 +1,21 @@
+# Unité systemd générique — à copier dans /etc/systemd/system/memory-node.service
+# Remplacer <UTILISATEUR_SERVICE> par un compte dédié non privilégié.
+[Unit]
+Description=Sensors&MemorySystemAI — nœud memory-node (organisme)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=<UTILISATEUR_SERVICE>
+Group=<UTILISATEUR_SERVICE>
+SupplementaryGroups=audio video
+WorkingDirectory=/opt/memorysystemai
+# Configuration sans secret (voir config.example.env) ; fichier local, mode 600
+EnvironmentFile=-/etc/memory-node/memory-node.env
+ExecStart=/opt/memorysystemai/.venv/bin/python /opt/memorysystemai/organism.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
