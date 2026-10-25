@@ -97,7 +97,7 @@ Réécriture :
 1. « Qui es-tu ? » → consultation outil LLM.  
 2. « Je m’appelle Vincent… » → mémorisation.  
 3. « Comment je m’appelle ? » → rappel.  
-4. Enseignement **SatRadioElectronsLibres** = WiFi local via Starlink.  
+4. Enseignement **MonWifi** = WiFi local via Starlink.  
 5. Re-question → **`source: memory`** (sans Kimi).  
 6. Ask Telegram + réponse intégrée (exposant 8).
 
