@@ -59,6 +59,11 @@ from sensor_mic import (  # noqa: E402
     CAPTURE_CTRL as MIC_CAPTURE_CTRL,
 )
 from autonomy import AutonomyKit  # noqa: E402
+# --- Ajout octobre 2026 : détection des contradictions (voir fact_conflict.py) ---
+# Pourquoi : deux faits enseignés incompatibles (« … est bleu » / « … est rouge »)
+# ne doivent pas être départagés par le nombre de répétitions.
+# Fiche : docs/changements/2026-10-25_detection-contradictions.md
+# Tests : python3 prototypes/memory-node/tests/test_contradictions.py
 from fact_conflict import (  # noqa: E402
     POSEE_PREFIX,
     TRANCHEE_PREFIX,
@@ -1773,11 +1778,17 @@ class Organism:
             })
         return out
 
+    # Modifié en octobre 2026 : la fonction RENVOIE maintenant la mémoire créée
+    # (ou None si l'exposant est sous le seuil d'enregistrement), pour que
+    # learn_taught_fact puisse la relier à un fait contradictoire. Les anciens
+    # appels qui ignorent ce retour fonctionnent comme avant.
     def learn_perception(self, fundamental: str, data: str, state: str = "X", exposant: int = 5) -> Optional[Any]:
         if exposant >= THRESHOLD_RECORD:
             return self.ms.create(fundamental, state, exposant, data[:500], source="experience")
         return None
 
+    # Photographie simple (liste de dictionnaires) de toutes les mémoires, dans la
+    # forme attendue par fact_conflict.py. Lecture seule : rien n'est modifié.
     def _fact_records(self) -> List[Dict[str, Any]]:
         return [
             {
@@ -1792,6 +1803,9 @@ class Organism:
             for e in self.ms.entries.values()
         ]
 
+    # Même fait redit : renforcer l'existant au lieu d'en créer une copie.
+    # Le plafond 8 vient du concept : un enseignement monte à 8, pas au-delà ;
+    # 9 et 10 sont réservés aux souvenirs qui bloquent (inhibition).
     def _reinforce_same_teaching(self, entry: Any, reason: str) -> None:
         """Même fait répété : on journalise, on ne crée pas une nouvelle mémoire.
 
@@ -1804,11 +1818,16 @@ class Organism:
         else:
             entry.reinforce(0, reason)
 
+    # Note dans human_feedback « question posée sur ce sujet », seulement si le
+    # champ est vide (on n'écrase jamais une information déjà présente).
     def _mark_contradiction_posed(self, entry: Any, subject_key: str) -> None:
         marker = POSEE_PREFIX + subject_key
         if not (entry.human_feedback or ""):
             entry.human_feedback = marker
 
+    # Relie deux faits contradictoires DANS LES DEUX SENS (champ correlations,
+    # déjà prévu par le schéma) et explique le lien dans `consequence` si vide.
+    # On n'inhibe pas : un désaccord n'est pas un danger, c'est une question.
     def _link_contradiction(self, left: Any, right: Any) -> None:
         if right.id not in (left.correlations or []):
             left.correlations.append(right.id)
@@ -1823,6 +1842,10 @@ class Organism:
                 f"Contredit {left.id} sur le même sujet (valeurs différentes, pas d'inhibition)"
             )
 
+    # Cas des faits anciens, enregistrés avant ce patch : on ajoute les liens au
+    # moment où on les rencontre. Étapes : 1) retrouver les mémoires du groupe ;
+    # 2) pour chaque paire de valeurs différentes, poser le lien ; 3) sauvegarder
+    # seulement si quelque chose a réellement changé.
     def _ensure_conflict_links(self, group: Dict[str, Any]) -> None:
         """Relie les faits déjà en index (hérités) sans changer exposant ni texte."""
         entries = []
@@ -1843,6 +1866,13 @@ class Organism:
         if changed:
             self.ms.save()
 
+    # Cœur du patch : traiter une phrase enseignée « X est Y ».
+    # Étapes :
+    # 1) demander à fact_conflict ce qu'est la phrase (nouveau / doublon / contradiction) ;
+    # 2) doublon → renforcer la mémoire existante, ne rien créer ;
+    # 3) sinon → créer le fait C/P/e8, exactement comme avant le patch ;
+    # 4) contradiction → relier les faits et poser UNE question à l'humain ;
+    # 5) sauvegarder et renvoyer un petit compte rendu.
     def learn_taught_fact(self, text: str) -> Dict[str, Any]:
         """Fait enseigné (le même create C/P/e8 qu'avant) + lien si contradiction.
 
@@ -1851,7 +1881,9 @@ class Organism:
         """
         snippet = (text or "")[:400]
         data = f"Fait enseigné par l'humain: {snippet}"
+        # Étape 1.
         decision = classify_new_fact(self._fact_records(), snippet)
+        # Étape 2 : doublon.
         if decision["kind"] == "duplicate" and decision.get("duplicate"):
             entry = self.ms.by_id(decision["duplicate"]["id"])
             if entry is not None:
@@ -1867,9 +1899,12 @@ class Organism:
                     "contradiction_ids": [],
                     "ask": None,
                 }
+        # Étape 3 : création, identique au comportement d'origine (C = conscience,
+        # P = état positif, exposant 8).
         entry = self.learn_perception("C", data, "P", 8)
         if entry is None:
             return {"kind": "skipped", "id": None, "contradiction_ids": [], "ask": None}
+        # Étape 4 : relier le nouveau fait à chaque fait qu'il contredit.
         conflicts = decision.get("conflicts") or []
         ids: List[str] = []
         for other_view in conflicts:
@@ -1888,6 +1923,7 @@ class Organism:
                     + ", ".join(ids)
                     + " sur le même sujet (valeurs différentes, pas d'inhibition)"
                 )
+            # Liste des valeurs en jeu (une par valeur différente) pour rédiger la question.
             values = []
             seen = set()
             for other_view in conflicts:
@@ -1908,14 +1944,23 @@ class Organism:
                 prefer=entry,
             )
             log(f"taught contradiction {entry.id} vs {ids}")
+        # Étape 5.
         self.ms.save()
         return {
             "kind": "contradiction" if ids else "new",
             "id": entry.id,
+            # Constat de la phase S (journal d'octobre 2026) : cette liste contient le
+            # nouveau fait même quand `ids` est vide, d'où un contradiction_ids non vide
+            # sans contradiction. Correction en analyse (phase T), non appliquée ici.
             "contradiction_ids": [entry.id, *ids],
             "ask": ask,
         }
 
+    # Règle « ask_human sans harceler », appliquée aux contradictions :
+    # 1) si la question de ce sujet a déjà été posée ou tranchée → ne rien faire ;
+    # 2) si la boîte de questions (une seule place) est occupée → ne rien faire,
+    #    car une nouvelle demande compterait comme une relance ;
+    # 3) sinon poser la question et noter qu'elle est posée.
     def _ask_contradiction_once(
         self,
         subject_key: str,
@@ -1941,6 +1986,11 @@ class Organism:
             self._mark_contradiction_posed(prefer, subject_key)
         return ask if fresh else None
 
+    # Lire la réponse de l'humain à la question de ce sujet et la noter.
+    # Étapes : 1) déjà tranché ? on renvoie le choix ; 2) la boîte contient-elle
+    # la réponse à NOTRE question ? 3) relier la réponse à une valeur (ou « ? ») ;
+    # 4) écrire « contradiction_tranchée:<sujet>=<valeur> » sur un des faits ;
+    # 5) marquer la réponse comme consommée pour ne pas la relire.
     def _persist_contradiction_answer(self, group: Dict[str, Any]) -> Optional[str]:
         """Si l'humain a répondu à LA question de ce sujet, on note le choix.
 
@@ -1977,14 +2027,24 @@ class Organism:
         self.ms.save()
         return chosen
 
+    # Appelée AVANT le rappel habituel et avant le LLM (« mémoire d'abord »).
+    # Étapes :
+    # 1) trouver les sujets contredits dont parle la perception ;
+    # 2) poser les liens manquants (faits anciens) ;
+    # 3) pour chaque sujet : tranché → dire le choix ; sinon → le garder « ouvert » ;
+    # 4) pour le premier sujet ouvert, poser la question une seule fois si possible ;
+    # 5) rédiger la réponse : citer les versions, ne pas choisir, dire où en est la question.
     def contradiction_reply(self, perception: str) -> Optional[Dict[str, Any]]:
         """Mémoire consultée avant le LLM : s'il y a contradiction, on ne
         laisse pas le nombre de copies choisir."""
+        # Étape 1.
         groups = conflict_groups_for_perception(self._fact_records(), perception)
         if not groups:
             return None
+        # Étape 2.
         for group in groups:
             self._ensure_conflict_links(group)
+        # Étape 3.
         unresolved = []
         resolved_bits = []
         ask = None
@@ -2013,6 +2073,7 @@ class Organism:
                 "resolved": True,
             }
         # Une seule question, pour le premier sujet encore ouvert.
+        # Étape 4 : une seule question à la fois, pour le premier sujet encore ouvert.
         group = unresolved[0]
         records = self._fact_records()
         posed = already_posed(records, group["subject_key"])
@@ -2033,6 +2094,7 @@ class Organism:
             )
             if ask and prefer is not None:
                 self.ms.save()
+        # Étape 5 : la fin de phrase dépend de l'état de la boîte à questions.
         if ask:
             tail = "Je pose la question une seule fois."
         elif posed or (mailbox_busy and pending and pending.get("context") == POSEE_PREFIX + group["subject_key"]):
@@ -2784,6 +2846,8 @@ class Organism:
         # Enseignement factuel humain → exposant fort (apprentissage réel).
         # Identité (« c'est / je suis / s'appelle ») et correction auditive :
         # création historique, sans détection de contradiction.
+        # Ajout octobre 2026 : les autres faits passent par learn_taught_fact (détection).
+        # taught_info garde son compte rendu pour l'ajouter à la réponse plus bas.
         taught_info = None
         if (" est " in low or " = " in low) and len(text) > 20 and "?" not in text:
             if m_corr or extract_identity_label(text):
@@ -2848,6 +2912,8 @@ class Organism:
             external_interpretation=external_interpretation,
             external_source=external_source,
         )
+        # Ajout octobre 2026 : recopier dans la réponse de /perceive les identifiants
+        # de contradiction et la question posée, si l'interprétation ne les a pas déjà.
         if taught_info:
             if taught_info.get("contradiction_ids") and not result.get("contradiction_ids"):
                 result["contradiction_ids"] = taught_info["contradiction_ids"]

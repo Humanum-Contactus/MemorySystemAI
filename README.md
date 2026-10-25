@@ -82,6 +82,14 @@ Détail : **[whitepaper](whitepaper/MemorySystemAI_Whitepaper_v1.md)**.
 
 Règle clé : les traumatismes (9–10) **ne descendent jamais sous 7**.
 
+## Philosophie
+
+Démarche empirique et pédagogique : code commenté pour un débutant, bibliothèque
+standard d'abord, chaque dépendance justifiée, formats ouverts (JSON, texte,
+Markdown), aucun service fermé obligatoire, et un journal qui raconte la démarche
+(hypothèse, essai, résultat, leçon). Le but : que le savoir ne parte pas avec les
+personnes. Règles détaillées : [CONTRIBUTING.md — Philosophie du projet](CONTRIBUTING.md#philosophie-du-projet).
+
 ## Démarrage rapide (code)
 
 ```python

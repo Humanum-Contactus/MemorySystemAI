@@ -14,9 +14,10 @@ Index : [`docs/README.md`](docs/README.md)
 
 ## [Non publié]
 
-### En cours (non déployé) — [phase T](docs/EVOLUTION_MEMORY_NODE_2026-10.md#phase-t--corrections-en-cours-danalyse-en-cours--non-déployé)
-- Limiter l’accumulation des souvenirs « Autonomie inhibée » créés par la boucle de fond (~226 en une journée).
-- Ne plus renvoyer `contradiction_ids` quand il n’y a pas de contradiction.
+### Déployé sur le nœud, pas encore dans ce dépôt — [phase T](docs/EVOLUTION_MEMORY_NODE_2026-10.md#phase-t--corrections-autonomie-et-contradiction-25102026-23292352)
+- Souvenirs « Autonomie inhibée » : un seul souvenir qui compte les occurrences et leurs dates, au lieu d’un nouveau à chaque tick.
+- `contradiction_ids` n’est plus renvoyé quand il n’y a pas de contradiction.
+- Code et tests à reporter ici ; fiche de changement à créer.
 
 ### Ajouté — phases M–R, fiche [`2026-10-25_detection-contradictions`](docs/changements/2026-10-25_detection-contradictions.md)
 - `prototypes/memory-node/fact_conflict.py` : détection des contradictions entre faits enseignés (sujet / valeur, accord simple, préambules).

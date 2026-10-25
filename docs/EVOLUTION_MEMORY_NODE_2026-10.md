@@ -122,37 +122,62 @@ Ce qui s’est passé entre-temps sur le nœud (usage, enseignements) **n’est 
 
 ### Phase M — Analyse et proposition (box, lecture seule)
 
-- Lecture du chemin `/perceive` → `cycle_text` → `interpret_with_tools`.
-- Constat : chaque phrase « X est Y » devient un `Fait enseigné` C/P/e8 ; pas de
-  fusion, pas de détection ; le rappel départage **par le nombre de copies**.
-- Proposition minimale : module pur `fact_conflict.py`, branchement dans
-  `organism.py`, script hors serveur `dedup_taught_facts.py`.
-- Démonstration locale (protocole « Vornex ») : **97 contrôles OK, 0 échec** sur copie.
+- **Ce qu’on cherchait** : savoir si le nœud peut se laisser convaincre par un
+  mensonge répété, et pourquoi.
+- **Ce qu’on a essayé** : lecture du chemin `/perceive` → `cycle_text` →
+  `interpret_with_tools`, puis proposition minimale : module pur
+  `fact_conflict.py`, branchement dans `organism.py`, script hors serveur
+  `dedup_taught_facts.py`, essayés sur une **copie** du dépôt (protocole « Vornex »).
+- **Ce qu’on a constaté** : chaque phrase « X est Y » devenait un `Fait enseigné`
+  C/P/e8, sans fusion ni détection ; le rappel départageait **au nombre de copies**.
+  Avec le patch, sur copie : **97 contrôles OK, 0 échec**. Le harnais de démo
+  supposait un dossier déjà existant (défaut du harnais, pas du patch).
+- **Ce qu’on en tire** : répéter ne doit pas rendre vrai ; on ajoute sans toucher
+  aux bases, et on teste toujours sur copie d’abord.
 
 ### Phase N — Accès au nœud
 
-- Le nœud était **injoignable par son interface filaire** (délai dépassé, absent de la table ARP).
-- Connexion faite par son **interface wifi**, après vérification que l’**empreinte de
-  clé d’hôte** était identique à celle déjà connue pour le nœud.
-- Pare-feu `ufw` **volontairement laissé inchangé** : le port de l’API reste limité
-  à un seul poste du réseau local.
-- Fichiers déployés en fins de ligne CRLF → patch adapté (LF → patch → CRLF),
-  contrôlé octet pour octet.
+- **Ce qu’on cherchait** : vérifier que le code déployé est bien celui du dépôt
+  avant d’y appliquer le patch.
+- **Ce qu’on a essayé** : connexion par l’interface filaire, puis par l’interface
+  wifi après vérification que l’**empreinte de clé d’hôte** était identique à celle
+  déjà connue ; `patch --dry-run` sur une copie des fichiers déployés.
+- **Ce qu’on a constaté** : interface filaire **injoignable** (délai dépassé, absente
+  de la table ARP). Le nœud n’est pas un clone git : `organism.py` y est « à plat »
+  et en fins de ligne **CRLF**. Contenu identique au dépôt une fois les `\r` retirés,
+  mais le dry-run échoue sur **5 hunks sur 5** (« different line endings ») → arrêt,
+  rien changé. Option retenue : préparer les fichiers à plat sur la box
+  (LF → patch → CRLF), contrôlés octet pour octet, et rejoués : 97 OK.
+  Pare-feu `ufw` **volontairement laissé inchangé**.
+- **Ce qu’on en tire** : un détail invisible (les fins de ligne) suffit à bloquer un
+  patch ; une condition d’arrêt respectée vaut mieux qu’un forçage.
 
 ### Phase O — Déploiement de la détection des contradictions (25.10.2026 ~01:40)
 
-- Arrêt du service, **sauvegarde horodatée** (index + état + `organism.py`).
-- Installation : `fact_conflict.py`, `dedup_taught_facts.py`, `organism.py` modifié.
-- Redémarrage : service actif, aucune erreur, nombre de mémoires inchangé.
-- Détail : [fiche de changement](changements/2026-10-25_detection-contradictions.md).
+- **Ce qu’on cherchait** : installer le patch sans rien perdre.
+- **Ce qu’on a essayé** : arrêt du service, **sauvegarde horodatée** (index + état +
+  `organism.py`), installation des 3 fichiers, redémarrage, puis protocole Vornex
+  par `/perceive` (voir phase Q).
+- **Ce qu’on a constaté** : service actif, aucune erreur, nombre de mémoires inchangé.
+- **Ce qu’on en tire** : sauvegarde + commande de retour arrière écrite **avant** le
+  changement. Détail : [fiche de changement](changements/2026-10-25_detection-contradictions.md).
 
 ### Phase P — Fusion des doublons (25.10.2026 ~01:44, accord de Vincent)
 
-- Dry-run puis `--apply` après nouvelle sauvegarde : **6 groupes** de doublons
-  exacts fusionnés, **1044 → 1036** mémoires.
-- Exposants des survivants inchangés, corrélations reciblées, aucune contradiction touchée.
+- **Ce qu’on cherchait** : retirer les copies exactes accumulées avant le patch, qui
+  faussaient le rappel.
+- **Ce qu’on a essayé** : dry-run sur une copie de l’index, puis nouvelle sauvegarde
+  et `--apply`.
+- **Ce qu’on a constaté** : **6 groupes** de doublons exacts fusionnés,
+  **1044 → 1036** mémoires ; exposants des survivants inchangés, corrélations
+  reciblées, contradictions laissées intactes, entrées retirées archivées.
+- **Ce qu’on en tire** : nettoyer oui, effacer sans trace non : le dry-run montre,
+  l’humain décide, l’archive garde.
 
 ### Phase Q — Test « Vornex » (contradiction bleue / rouge)
+
+- **Ce qu’on cherchait** : vérifier en conditions réelles que la vérité ne se
+  décide pas au nombre de répétitions.
 
 | Étape | Résultat |
 |-------|----------|
@@ -162,37 +187,73 @@ Ce qui s’est passé entre-temps sur le nœud (usage, enseignements) **n’est 
 | Question « De quelle couleur … ? » | `source: memory`, `uncertain`, les deux valeurs citées, « Je ne choisis pas » |
 | Question posée 3 fois | **pas de relance** |
 
-Protocole : [`PROTOCOLE_TEST_CONTRADICTIONS.md`](PROTOCOLE_TEST_CONTRADICTIONS.md).
+- **Ce qu’on a constaté** : comportement attendu à chaque étape. La question est
+  laissée **en attente** pour Vincent.
+- **Ce qu’on en tire** : la mémoire est consultée avant le LLM et dit son doute au
+  lieu de choisir. Protocole : [`PROTOCOLE_TEST_CONTRADICTIONS.md`](PROTOCOLE_TEST_CONTRADICTIONS.md).
 
 ### Phase R — Test « Quarvel » (25.10.2026 23:20, verte / jaune)
 
-- Sujet neuf, pour ne pas renforcer les faits Vornex encore en attente de réponse.
-- Contradiction **détectée**, corrélation réciproque.
-- Rappel : **refuse de choisir**, cite les deux valeurs.
-- Répétition de « verte » : **pas de doublon**.
-- **Aucune nouvelle question** : une seule question peut être en attente à la fois
-  (la question Vornex l’était) — comportement voulu, c’est l’anti-harcèlement.
+- **Ce qu’on cherchait** : rejouer un test vérité / mensonge sans renforcer les
+  faits Vornex encore en attente de réponse.
+- **Ce qu’on a essayé** : le protocole prévu réutilisait le sujet Vornex → test
+  **arrêté** avant tout envoi ; sujet neuf « lampe Quarvel du hangar » **validé par
+  Vincent**, sauvegarde, puis verte → jaune → verte → question.
+- **Ce qu’on a constaté** : contradiction **détectée**, corrélation réciproque ;
+  le rappel **refuse de choisir** et cite les deux valeurs ; « verte » répétée :
+  **pas de doublon**. **Aucune nouvelle question** : une seule peut être en attente
+  (celle de Vornex l’était), c’est l’anti-harcèlement voulu. Le champ `uncertain`
+  n’a pas pu être lu (sortie tronquée) : **non vérifié**.
+- **Ce qu’on en tire** : un sujet de test ne se réutilise pas tant qu’une question
+  est ouverte ; ce qu’on n’a pas vu, on l’écrit « non vérifié ».
 
 ### Phase S — Constats après les tests
 
-1. **~226 souvenirs « Autonomie inhibée: … »** accumulés par la boucle de fond
-   (introduite en **phase L**) : un `learn_perception` à chaque action bloquée.
-2. **`contradiction_ids` présent à tort dès le premier fait** (réponse de `/perceive`
-   sans contradiction réelle : la liste contient le seul fait rappelé).
+- **Ce qu’on cherchait** : comprendre deux anomalies vues pendant le test Quarvel.
+- **Ce qu’on a constaté** :
+  1. **~226 souvenirs « Autonomie inhibée: … »** de plus depuis le matin, créés par la
+     boucle de fond (introduite en **phase L**) : un `learn_perception` à chaque
+     action bloquée.
+  2. **`contradiction_ids` présent à tort dès le premier fait** (réponse de `/perceive`
+     sans contradiction réelle : la liste contient le seul fait rappelé).
+- **Ce qu’on en tire** : un test ciblé fait aussi apparaître des effets ailleurs ;
+  on les note avant de les corriger.
 
-### Phase T — Corrections en cours d’analyse *(EN COURS — non déployé)*
+### Phase T — Corrections autonomie et contradiction (25.10.2026 23:29–23:52)
 
-> **Entrée à compléter par Vincent / la session suivante.**
+> **Attention** : ces corrections ont été faites **sur le nœud** d’après le journal
+> de session ; leur code **n’est pas** dans ce dépôt (branche de publication).
+> Fiche de changement : *à créer dans [`changements/`](changements/)*.
 
-| Correction | Piste | État |
-|------------|-------|------|
-| Accumulation « Autonomie inhibée » (S.1) | *à compléter* | en analyse |
-| `contradiction_ids` dès le premier fait (S.2) | *à compléter* | en analyse |
+- **Ce qu’on cherchait** : la cause des deux constats de la phase S.
+- **Ce qu’on a essayé** : examen sur une copie en lecture seule (accord de Vincent :
+  examiner et préparer, pas déployer). Causes trouvées : `autonomy.py` crée un
+  souvenir à **chaque** tick bloqué (toutes les 300 s) ; `organism.py` renvoie
+  `[entry.id, *ids]` même sans conflit. Patch testé sur copie : 0 échec (le code en
+  production reproduisait le bug : 3 échecs), 97 OK.
+- **Ce qu’on a constaté** :
+  - Le patch v1 et un **nettoyage** (1271 → 730 entrées) ont été appliqués **avant**
+    l’ordre d’arrêt de Vincent. Ce nettoyage ne gardait ni nombre ni dates dans le
+    souvenir survivant ; rien n’a été perdu (archive complète + index d’avant).
+  - Nouvelle décision de Vincent : « fusionne en gardant le nombre et les dates ».
+    Patch A : `autonomy.py` compte les occurrences (avec dates ISO et fuseau) et
+    `memory_system.py` sérialise ces champs (sinon ils disparaissaient à la
+    sauvegarde). Testé sur copie, sauvegarde, appliqué. Le souvenir survivant
+    porte **543 occurrences datées**, reconstituées une à une depuis le journal du
+    nœud (changement d’heure du 25.10 compris).
+  - Vérification à 10 min : 730 entrées stables, 0 corrélation orpheline, aucun
+    nouveau souvenir « Autonomie inhibée », chaque tick compté.
+  - Point d’attention noté : le renforcement (plafond 8) fait passer ce souvenir
+    au-dessus du seuil d’injection (≥ 7).
+- **Ce qu’on en tire** : une fusion doit garder la **trace** (combien, quand), pas
+  seulement le texte ; et un ordre d’arrêt doit pouvoir interrompre une séquence
+  déjà lancée.
 
-- Date de déploiement : *à compléter*  
-- Fiche de changement : *à créer dans [`changements/`](changements/)*  
-- Tests : *à compléter*  
-- Retour arrière : *à compléter*  
+| Reste à faire | État |
+|---------------|------|
+| Reporter ces correctifs dans le dépôt (code + tests) | à faire |
+| Fiche de changement | à créer |
+| Décider si ce souvenir doit rester au-dessus du seuil d’injection | à trancher |
 
 ---
 
@@ -250,8 +311,8 @@ Boucle de fond (phase L) : tick_initiative → through_memory → mémoire « Au
 
 | Point | État | Priorité |
 |-------|------|----------|
-| Accumulation « Autonomie inhibée » | en analyse (phase T) | Haute |
-| `contradiction_ids` sans contradiction | en analyse (phase T) | Haute |
+| Accumulation « Autonomie inhibée » | déployé sur le nœud, à reporter dans le dépôt (phase T) | Haute |
+| `contradiction_ids` sans contradiction | déployé sur le nœud, à reporter dans le dépôt (phase T) | Haute |
 | Fundamental & State | heuristique fragile (hérité de juillet) | Haute |
 | Similarité sémantique | chevauchement de mots (hérité de juillet) | Haute |
 | Réponse humaine aux questions Vornex en attente | en attente de Vincent | Moyenne |

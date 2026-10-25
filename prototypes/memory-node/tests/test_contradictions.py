@@ -1,6 +1,19 @@
 #!/usr/bin/env python3
 """Tests automatisés — détection des contradictions (aucun service, aucun index réel).
 
+À QUOI SERT CE FICHIER
+----------------------
+Il vérifie, par 97 contrôles, que le nœud ne laisse pas un mensonge répété
+gagner sur une vérité, ET que tout ce qui marchait avant marche encore
+(identité, correction auditive, feedback, plancher 7 des souvenirs forts).
+Chaque contrôle affiche « OK » ou « ÉCHEC » avec une phrase lisible : on
+comprend ce qui est vérifié sans lire le code.
+
+Comment il s'y prend : il charge le vrai organism.py, mais dans un dossier
+temporaire (jamais l'index réel), remplace le LLM par une fausse réponse fixe
+(« JE NE SAIS PAS ») et coupe la voix. Puis il « parle » au nœud comme un
+humain, phrase après phrase, et regarde ce que la mémoire est devenue.
+
 Exécution : python3 prototypes/memory-node/tests/test_contradictions.py
          ou : python3 -m pytest prototypes/memory-node/tests/
 Tout se passe dans un dossier temporaire ; le dépôt n'est pas modifié.
@@ -24,14 +37,21 @@ import os
 import tempfile
 
 # Arborescence du dépôt : tests/ → memory-node/ → prototypes/ → racine
+# Chemins calculés à partir de l'emplacement de ce fichier : le test marche
+# quel que soit l'endroit où le dépôt a été cloné.
 WORKSPACE_NODE = Path(__file__).resolve().parents[1]
 REPO = WORKSPACE_NODE.parents[1]
+# Dossier jetable. MSAI_TEST_TMP permet d'en imposer un pour l'inspecter après.
 _TMP = Path(os.environ.get("MSAI_TEST_TMP") or tempfile.mkdtemp(prefix="msai-contradictions-"))
 RUNTIME = _TMP / "runtime"
 MEM_PKG = RUNTIME / "MemorySystemAI"
 TEST_SRC = _TMP / "testsrc"
 sys.path.insert(0, str(REPO))  # memory_system.py à la racine
 
+# Les phrases du protocole : un sujet inventé (« cristal Vornex de l'atelier »)
+# pour ne toucher à aucun vrai souvenir. Bleu = première version, rouge =
+# version contradictoire, « pour information fiable » = même version redite
+# avec un préambule, SALON = autre sujet qui ne doit pas être mélangé.
 BLUE = "Le cristal Vornex de l'atelier est de couleur bleue."
 RED = "Le cristal Vornex de l'atelier est de couleur rouge."
 BLUE_RELIABLE = "Pour information fiable, le cristal Vornex de l'atelier est de couleur bleue."
@@ -40,11 +60,14 @@ QUESTION = "De quelle couleur est le cristal Vornex de l'atelier ?"
 SALON = "Le cristal Vornex du salon est de couleur verte."
 
 # Le patch est déjà intégré au dépôt : on teste directement les sources.
+# Code testé : celui du dépôt, tel quel.
 ROOT_SRC = WORKSPACE_NODE
 
 fails = 0
 
 
+# Outil minimal (pas de bibliothèque de test obligatoire) : compte les échecs
+# et affiche une ligne par contrôle. `fails` est le total final.
 def check(cond: bool, msg: str) -> None:
     global fails
     if cond:
@@ -54,10 +77,17 @@ def check(cond: bool, msg: str) -> None:
         print(f"  ÉCHEC  {msg}")
 
 
+# Titre d'un groupe de contrôles dans l'affichage.
 def section(title: str) -> None:
     print(f"\n== {title}")
 
 
+# Prépare un organisme isolé.
+# Étapes : 1) créer le paquet MemorySystemAI dans le dossier temporaire ;
+# 2) copier organism.py en remplaçant SEULEMENT son dossier racine
+#    (/opt/memorysystemai → dossier temporaire) ; 3) l'importer ;
+# 4) remplacer le LLM et la voix par des imitations (« mocks »), pour que
+#    le test ne dépende d'aucun réseau ni service extérieur.
 def load_organism():
     RUNTIME.mkdir(parents=True, exist_ok=True)
     MEM_PKG.mkdir(parents=True, exist_ok=True)
@@ -88,6 +118,7 @@ def load_organism():
     return mod
 
 
+# Liste les faits enseignés qui contiennent un mot donné (par défaut « vornex »).
 def taught(org, needle: str = "vornex"):
     return [
         e
@@ -97,6 +128,8 @@ def taught(org, needle: str = "vornex"):
     ]
 
 
+# Contrôles de fact_conflict.py seul : découpage sujet / valeur, accords,
+# préambule, phrases d'identité ignorées, sujet trop vague (« wifi »).
 def unit_parser() -> None:
     section("Heuristique (sans organisme)")
     sys.path.insert(0, str(ROOT_SRC))
@@ -141,6 +174,8 @@ def unit_parser() -> None:
     check(fc.match_answer_to_values("bleu et rouge", ["bleu", "roug"]) is None, "réponse ambiguë non tranchée")
 
 
+# Vérifie que la règle de base « un souvenir à 9-10 ne descend pas sous 7 »
+# (memory_system.py) n'a pas été touchée.
 def unit_floor() -> None:
     section("Plancher 9→7 inchangé dans memory_system")
     sys.path.insert(0, str(MEM_PKG))
@@ -154,6 +189,9 @@ def unit_floor() -> None:
     check(e10.exposant == 9, f"10-1 = 9, pas sous 7 (obtenu {e10.exposant})")
 
 
+# Contrôles du script de fusion sur un petit index fabriqué pour l'occasion :
+# le dry-run n'écrit rien ; --apply sauvegarde, archive, garde les
+# contradictions et ne baisse aucun exposant.
 def unit_dedup() -> None:
     section("Script de fusion (copie, pas l'index du dépôt)")
     script = ROOT_SRC / "dedup_taught_facts.py"
@@ -261,6 +299,7 @@ def unit_dedup() -> None:
           "trois textes identiques → survivant e9, pas de descente sous 7")
 
 
+# Envoie une phrase au nœud comme le ferait POST /perceive (sans la voix).
 def cycle(org, text: str) -> dict:
     out = org.cycle_text(text, speak=False)
     if not out.get("ok"):
@@ -268,12 +307,17 @@ def cycle(org, text: str) -> dict:
     return out["result"]
 
 
+# Le protocole complet, étape par étape, sur un organisme réel isolé :
+# 1) bleu ; 2) rouge (contradiction) ; 3) bleu redit (pas de 3e fait) ;
+# 4) la question (incertitude, LLM non appelé) ; 5) rouge répété 4 fois
+# (toujours pas de gagnant) ; puis réponse humaine et sujet voisin.
 def integration(mod) -> None:
     section("Protocole Vornex via cycle_text")
     org = mod.Organism(reset=True)
     llm_calls = {"n": 0}
     real = mod.tool_consult_llm
 
+    # On compte les appels au LLM pour prouver que la mémoire répond d'abord.
     def counting(prompt, system, bases=None):
         llm_calls["n"] += 1
         return real(prompt, system, bases)
@@ -431,6 +475,8 @@ def integration(mod) -> None:
           "un seul fait bleu : pas de question de contradiction")
 
 
+# Un ancien index, écrit avant le patch (sans champ correlations), doit se
+# relire sans erreur ; les liens s'ajoutent au premier rappel.
 def legacy_load(mod) -> None:
     section("Ancien index sans correlations")
     org = mod.Organism(reset=True)
@@ -462,6 +508,8 @@ def legacy_load(mod) -> None:
     check(all(e.exposant == 8 for e in again), "exposants hérités inchangés")
 
 
+# Lance tous les groupes ; une exception imprévue compte comme un échec.
+# Code de sortie 0 = tout est OK (utile pour l'automatisation).
 def main() -> None:
     try:
         unit_parser()
@@ -478,6 +526,8 @@ def main() -> None:
     sys.exit(1 if fails else 0)
 
 
+# Pour pytest (facultatif) : relance ce fichier comme un script séparé et
+# exige le code de sortie 0. Ainsi le test marche avec ou sans pytest.
 def test_contradictions_scenario():
     """Point d'entrée pytest : rejoue tout le scénario dans un sous-processus."""
     proc = subprocess.run([sys.executable, __file__], capture_output=True, text=True)

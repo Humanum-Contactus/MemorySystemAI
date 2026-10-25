@@ -1,6 +1,26 @@
 #!/usr/bin/env python3
 """Fusion optionnelle des doublons déjà présents dans memory_index.json.
 
+À QUOI SERT CE FICHIER
+----------------------
+Avant la détection des contradictions, une même phrase enseignée plusieurs
+fois créait plusieurs mémoires identiques. Ces copies faussaient le rappel :
+la version la plus répétée « gagnait ». Ce script, lancé À LA MAIN et hors du
+serveur, regroupe ces copies en une seule mémoire, sans rien perdre.
+
+Idée du concept : la mémoire doit rester fidèle à ce qui a été vécu. On ne
+supprime donc rien sans trace : sauvegarde complète d'abord, archive des
+entrées retirées ensuite, et l'exposant (la force du souvenir, de 1 à 10)
+du survivant n'est jamais baissé.
+
+COMMENT L'ESSAYER (toujours sur une COPIE de l'index d'abord)
+-------------------------------------------------------------
+    cp memory_index.json /tmp/copie.json
+    python3 dedup_taught_facts.py --index /tmp/copie.json           # ne fait que montrer
+    python3 dedup_taught_facts.py --index /tmp/copie.json --apply   # écrit vraiment
+
+Sans --apply, le script n'écrit rien : c'est un « dry-run » (répétition à blanc).
+
 Ne lance rien sur l'index vivant tant que --apply n'est pas passé.
 Avec --apply :
   1. copie de sauvegarde <index>.bak-<horodatage> (fichier complet)
@@ -31,6 +51,8 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+# Permet d'importer fact_conflict.py qui se trouve dans le même dossier,
+# quel que soit le dossier depuis lequel on lance le script.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from fact_conflict import (  # noqa: E402
@@ -40,6 +62,9 @@ from fact_conflict import (  # noqa: E402
 )
 
 
+# Lit l'index. Deux formats existent : une simple liste d'entrées (ancien),
+# ou un objet {schema, version, stats, entries} (actuel). On renvoie l'objet
+# complet (pour le réécrire tel quel) ET la liste des entrées (pour travailler).
 def _load(path: Path) -> Tuple[Any, List[Dict[str, Any]]]:
     raw = json.loads(path.read_text(encoding="utf-8"))
     if isinstance(raw, list):
@@ -52,6 +77,7 @@ def _load(path: Path) -> Tuple[Any, List[Dict[str, Any]]]:
     raise SystemExit("index illisible : ni liste ni objet")
 
 
+# « M056 » → 56. Sert à départager deux mémoires par ancienneté.
 def _num_id(entry: Dict[str, Any]) -> int:
     try:
         return int(str(entry.get("id", "")).lstrip("Mm") or 0)
@@ -59,6 +85,10 @@ def _num_id(entry: Dict[str, Any]) -> int:
         return 0
 
 
+# Ordre de préférence pour choisir la mémoire qui reste :
+# 1) l'exposant le plus élevé (le souvenir le plus fort) ;
+# 2) puis la date la plus ancienne ; 3) puis le plus petit numéro.
+# Le signe « - » devant l'exposant fait trier du plus grand au plus petit.
 def _survivor_key(entry: Dict[str, Any]) -> tuple:
     return (
         -int(entry.get("exposant") or 0),
@@ -67,6 +97,10 @@ def _survivor_key(entry: Dict[str, Any]) -> tuple:
     )
 
 
+# « Signature » = ce qui doit être identique pour que deux mémoires soient
+# des doublons. Mode par défaut : même fait enseigné (sujet + valeur, même
+# fondamental, même état). Mode --all-exact : même texte exact, quel que
+# soit le type de mémoire. None = cette entrée n'est pas concernée.
 def _signature(entry: Dict[str, Any], all_exact: bool) -> Optional[tuple]:
     if all_exact:
         data = entry.get("data") or ""
@@ -85,6 +119,12 @@ def _signature(entry: Dict[str, Any], all_exact: bool) -> Optional[tuple]:
     )
 
 
+# Fusionne un groupe de doublons en un seul survivant.
+# Étapes : 1) trier pour choisir le survivant ; 2) le copier entièrement
+# (json.loads(json.dumps(...)) = copie profonde, les champs inconnus restent) ;
+# 3) récupérer l'historique, les liens et les tags des copies retirées ;
+# 4) compléter les champs vides du survivant avec ceux des copies ;
+# 5) ajouter une ligne d'historique « fusion », exposant inchangé.
 def _merge_group(group: List[Dict[str, Any]], today: str) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     ordered = sorted(group, key=_survivor_key)
     survivor = json.loads(json.dumps(ordered[0]))  # copie profonde, champs inconnus gardés
@@ -121,6 +161,9 @@ def _merge_group(group: List[Dict[str, Any]], today: str) -> Tuple[Dict[str, Any
     return survivor, removed
 
 
+# Après fusion, une autre mémoire peut encore pointer vers une copie
+# retirée (champ correlations). On redirige ce lien vers le survivant,
+# sans doublon et sans lien d'une mémoire vers elle-même.
 def _retarget(entries: List[Dict[str, Any]], absorbed: Dict[str, str]) -> None:
     """Les liens vers un id absorbé pointent vers le survivant. Rien d'autre ne change."""
     if not absorbed:
@@ -137,6 +180,9 @@ def _retarget(entries: List[Dict[str, Any]], absorbed: Dict[str, str]) -> None:
         entry["correlations"] = new_corr
 
 
+# Prépare la fusion SANS rien écrire : regroupe les entrées par signature et
+# garde les groupes d'au moins deux. Liste aussi les contradictions, qui ne
+# sont JAMAIS fusionnées (deux versions différentes doivent rester visibles).
 def plan(entries: List[Dict[str, Any]], all_exact: bool) -> Tuple[List[List[Dict[str, Any]]], List[Dict[str, Any]]]:
     buckets: Dict[tuple, List[Dict[str, Any]]] = {}
     for entry in entries:
@@ -149,6 +195,8 @@ def plan(entries: List[Dict[str, Any]], all_exact: bool) -> Tuple[List[List[Dict
     return groups, conflicts
 
 
+# Construit la nouvelle liste d'entrées : chaque survivant remplace sa
+# place d'origine, les copies sont retirées, l'ordre est conservé.
 def apply_groups(entries: List[Dict[str, Any]], groups: List[List[Dict[str, Any]]]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     today = dt.date.today().isoformat()
     removed_ids = set()
@@ -176,6 +224,8 @@ def apply_groups(entries: List[Dict[str, Any]], groups: List[List[Dict[str, Any]
     return kept, removed_full
 
 
+# Déroulé : lire les options → lire l'index → montrer le plan →
+# s'arrêter si dry-run → sinon sauvegarde, archive, puis réécriture.
 def main() -> None:
     parser = argparse.ArgumentParser(description="Fusion non destructive des doublons mémoire")
     parser.add_argument("--index", required=True, help="chemin de memory_index.json")
@@ -208,12 +258,16 @@ def main() -> None:
     if not args.apply:
         print("dry-run : aucun fichier écrit. Relancer avec --apply après arrêt du service.")
         return
+    # Le service garde la mémoire en RAM et réécrit le fichier à chaque
+    # sauvegarde : s'il tourne, il effacerait notre travail. D'où l'arrêt préalable.
     print("ATTENTION : memory-node doit être arrêté, sinon la RAM réécrit l'index.")
     ts = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
     backup = path.with_name(path.name + f".bak-{ts}")
     archive = path.with_name(f"dedup-archive-{ts}.json")
+    # 1) Sauvegarde complète AVANT toute écriture (copy2 garde aussi les dates).
     shutil.copy2(path, backup)
     new_entries, removed = apply_groups(entries, groups)
+    # 2) Archive lisible des entrées retirées, pour pouvoir les retrouver.
     archive.write_text(
         json.dumps(
             {
@@ -227,6 +281,7 @@ def main() -> None:
         ),
         encoding="utf-8",
     )
+    # 3) Réécriture dans le même format que celui lu, compteur total mis à jour.
     if isinstance(raw, dict):
         raw["entries"] = new_entries
         raw["generated"] = dt.datetime.now().isoformat(timespec="seconds")
