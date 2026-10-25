@@ -1,5 +1,6 @@
 # Fiche de changement — détection des contradictions entre faits enseignés
 
+> **FR (source)** · **[English →](../en/changements/2026-10-25_detection-contradictions.md)** · [`LANGUES.md`](../LANGUES.md)  
 > Chronique : [phases M–S](../EVOLUTION_MEMORY_NODE_2026-10.md#chantier-doctobre-2026) ·
 > Protocole : [`PROTOCOLE_TEST_CONTRADICTIONS.md`](../PROTOCOLE_TEST_CONTRADICTIONS.md) ·
 > Tests : [`tests/`](../../prototypes/memory-node/tests/README.md) ·
@@ -50,7 +51,7 @@ python3 prototypes/memory-node/tests/test_contradictions.py
 python3 -m pytest prototypes/memory-node/tests
 ```
 
-Attendu : `RÉUSSI — 0 contrôle(s) en échec` (97 contrôles) / `1 passed`.
+Attendu : `RÉUSSI — 0 contrôle(s) en échec` (97 contrôles) / `3 passed` (les trois scripts).
 
 Test sur un nœud réel : [`../PROTOCOLE_TEST_CONTRADICTIONS.md`](../PROTOCOLE_TEST_CONTRADICTIONS.md).
 
@@ -90,7 +91,27 @@ sauvegarde est perdu. Pour ne revenir que sur le code, restaurer seulement
 
 Dans git : `git revert <commit>` du commit « contradictions ».
 
-## 5. Risques et limites
+## 5. Ce qui a été réellement exécuté (25.10.2026)
+
+Les commandes exactes, fichiers touchés, résultats et retours arrière tels que
+consignés dans le journal de session sont dans la chronique :
+[phase O (déploiement)](../EVOLUTION_MEMORY_NODE_2026-10.md#phase-o--déploiement-de-la-détection-des-contradictions-01400145),
+[phase P (fusion des doublons)](../EVOLUTION_MEMORY_NODE_2026-10.md#phase-p--fusion-des-doublons-0144-accord-de-vincent),
+[phase Q (test)](../EVOLUTION_MEMORY_NODE_2026-10.md#phase-q--test--vornex--contradiction-bleue--rouge-0145).
+Les commandes ci-dessus (sections 3 et 4) sont des **recettes génériques** ; celles
+du journal font foi pour ce qui s’est passé. Quand le journal ne donne pas une
+commande mot pour mot, la chronique l’écrit (`# commande exacte non consignée`).
+
+```bash
+# Exécuté (journal) :
+sudo systemctl stop memory-node
+tar tzf backups/contradictions_20261025T014030.tgz   # contrôle de la sauvegarde
+sudo systemctl start memory-node
+# Retour arrière consigné :
+sudo systemctl stop memory-node && cd /opt/memorysystemai && tar xzf backups/contradictions_20261025T014030.tgz && rm -f fact_conflict.py dedup_taught_facts.py && sudo systemctl start memory-node && systemctl is-active memory-node
+```
+
+## 6. Risques et limites
 
 - Découpage sur le **premier** « est » / « = » : « Le fait est que… » se coupe trop tôt.
 - Sujet trop court (« le wifi est … ») : pas de détection, choix volontaire.
@@ -101,7 +122,7 @@ Dans git : `git revert <commit>` du commit « contradictions ».
   (l’incertitude est quand même dite).
 - `GET /memories` ne montre pas les corrélations (lire l’index).
 - **Constaté en production** : `contradiction_ids` renvoyé même sans contradiction
-  (correction en analyse, voir chronique octobre 2026, phase Q).
+  → corrigé en phase U ([fiche](2026-10-25_autonomie-contradiction-ids.md)).
 
 ---
 

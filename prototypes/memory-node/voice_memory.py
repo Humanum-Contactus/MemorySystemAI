@@ -151,6 +151,17 @@ def embed_voice(wav_path: str | Path) -> Optional[List[float]]:
     return _l2(vec.tolist())
 
 
+# Les fichiers de ma propre synthèse vocale commencent par « tts_self_ ».
+# Pourquoi : ma voix de synthèse n'est pas une personne ; elle avait créé une
+# fausse fiche voix (VP002). Tout clip ainsi nommé est donc ignoré.
+TTS_SELF_PREFIX = "tts_self_"
+
+
+def _is_tts_self(clip: Any) -> bool:
+    """Clip de ma propre synthèse vocale : jamais une voix humaine."""
+    return bool(clip) and Path(str(clip)).name.startswith(TTS_SELF_PREFIX)
+
+
 class VoicePersonMemory:
     """Persistance JSON des identités vocales."""
 
@@ -272,6 +283,8 @@ class VoicePersonMemory:
         if not label:
             return None
         last = self.data.get("last_seen") or {}
+        if _is_tts_self(last.get("clip")):
+            last = {}
         if last.get("kind") == "person" and last.get("id"):
             for p in self.data["persons"]:
                 if p["id"] == last["id"]:
@@ -287,8 +300,12 @@ class VoicePersonMemory:
                 if u["id"] == last["id"]:
                     pending = u
                     break
-        if pending is None and self.data["pending"]:
-            pending = self.data["pending"][-1]
+        if pending is not None and _is_tts_self(pending.get("clip")):
+            pending = None
+        if pending is None:
+            humans = [u for u in self.data["pending"] if not _is_tts_self(u.get("clip"))]
+            if humans:
+                pending = humans[-1]
         if pending is None:
             person = {
                 "id": self._next_id("VP"),
@@ -355,6 +372,8 @@ class VoicePersonMemory:
 
     def process_wav(self, wav_path: str | Path, transcript: str = "") -> Dict[str, Any]:
         self.load()  # sync disque (inscription hors process / multi-outil)
+        if _is_tts_self(wav_path):
+            return {"ok": False, "error": "tts_self ignoré", "recognized": None, "unknown": None}
         emb = embed_voice(wav_path)
         if not emb:
             return {"ok": False, "error": "no voice embedding", "recognized": None, "unknown": None}

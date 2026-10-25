@@ -1,12 +1,14 @@
 # Journal des modifications (CHANGELOG)
 
+> **FR (source)** · **[English →](CHANGELOG.en.md)** · [`LANGUES.md`](docs/LANGUES.md)
+
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Dates au format JJ.MM.AAAA (heure de Zurich). Le récit détaillé est dans les chroniques :
 
 | Chronique | Phases |
 |-----------|--------|
 | [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md) | A–I |
-| [`docs/EVOLUTION_MEMORY_NODE_2026-10.md`](docs/EVOLUTION_MEMORY_NODE_2026-10.md) | J–T |
+| [`docs/EVOLUTION_MEMORY_NODE_2026-10.md`](docs/EVOLUTION_MEMORY_NODE_2026-10.md) | J–W |
 
 Fiches de changement : [`docs/changements/`](docs/changements/) ·
 Règle pour continuer : [`CONTRIBUTING.md`](CONTRIBUTING.md#continuer-le-journal) ·
@@ -14,10 +16,11 @@ Index : [`docs/README.md`](docs/README.md)
 
 ## [Non publié]
 
-### Déployé sur le nœud, pas encore dans ce dépôt — [phase T](docs/EVOLUTION_MEMORY_NODE_2026-10.md#phase-t--corrections-autonomie-et-contradiction-25102026-23292352)
-- Souvenirs « Autonomie inhibée » : un seul souvenir qui compte les occurrences et leurs dates, au lieu d’un nouveau à chaque tick.
-- `contradiction_ids` n’est plus renvoyé quand il n’y a pas de contradiction.
-- Code et tests à reporter ici ; fiche de changement à créer.
+### Corrigé — phases U–W (déployé sur le nœud le 25.10.2026, reporté ici)
+- [Phase U](docs/EVOLUTION_MEMORY_NODE_2026-10.md#phase-u--correction--contradiction_ids-annoncé-trop-tôt-déployée-à-2336) : `contradiction_ids` vide quand il n’y a pas de contradiction (`organism.py`).
+- [Phase V](docs/EVOLUTION_MEMORY_NODE_2026-10.md#phase-v---autonomie-inhibée---compter-au-lieu-de-recopier-23362352) : un refus d’autonomie répété renforce un seul souvenir et compte `occurrences` + `occurrence_dates` (`autonomy.py`) ; `memory_system.py` conserve ces champs facultatifs. Scripts `maintenance/`. Fiche [`2026-10-25_autonomie-contradiction-ids`](docs/changements/2026-10-25_autonomie-contradiction-ids.md).
+- [Phase W](docs/EVOLUTION_MEMORY_NODE_2026-10.md#phase-w--corrections-voix-2353) : `hear_self` n’écrit plus dans la mémoire des voix, clips `tts_self_*` ignorés, half-duplex `SPEAKING` (+0,5 s), suppression de VP002. Fiche [`2026-10-25_voix-half-duplex`](docs/changements/2026-10-25_voix-half-duplex.md).
+- Tests : `tests/test_autonomie.py`, `tests/test_voix.py` (données fabriquées).
 
 ### Ajouté — phases M–R, fiche [`2026-10-25_detection-contradictions`](docs/changements/2026-10-25_detection-contradictions.md)
 - `prototypes/memory-node/fact_conflict.py` : détection des contradictions entre faits enseignés (sujet / valeur, accord simple, préambules).

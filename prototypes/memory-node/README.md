@@ -41,7 +41,8 @@ Documentation :
 | `config.example.env` | Exemple de configuration, sans secret |
 | `fact_conflict.py` | Détection des contradictions entre faits enseignés |
 | `dedup_taught_facts.py` | Fusion manuelle des doublons (dry-run par défaut) |
-| `tests/` | Tests automatisés (`test_contradictions.py`) |
+| `tests/` | Tests automatisés (`test_contradictions.py`, `test_autonomie.py`, `test_voix.py`) |
+| `maintenance/` | Scripts manuels hors serveur (fusion « Autonomie inhibée », suppression VP002) — [README](maintenance/README.md) |
 | `systemd/memory-node.service.generic.example` | Unit systemd générique |
 | `systemd/memory-node.service.example` | Unit systemd |
 | `openclaw-skill/` | Pont Telegram (**pont**, pas le cœur du concept) |

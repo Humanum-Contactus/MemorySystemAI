@@ -88,7 +88,8 @@ Démarche empirique et pédagogique : code commenté pour un débutant, biblioth
 standard d'abord, chaque dépendance justifiée, formats ouverts (JSON, texte,
 Markdown), aucun service fermé obligatoire, et un journal qui raconte la démarche
 (hypothèse, essai, résultat, leçon). Le but : que le savoir ne parte pas avec les
-personnes. Règles détaillées : [CONTRIBUTING.md — Philosophie du projet](CONTRIBUTING.md#philosophie-du-projet).
+personnes. Règle de base : si les assistants disparaissent, n’importe qui doit pouvoir
+comprendre, relire et refaire nos actions, sans abonnement, service payant ni outil fermé. Règles détaillées : [CONTRIBUTING.md — Philosophie du projet](CONTRIBUTING.md#philosophie-du-projet).
 
 ## Démarrage rapide (code)
 

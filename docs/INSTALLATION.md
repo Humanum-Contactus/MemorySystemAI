@@ -1,5 +1,6 @@
 # Installation et tests — prototype `memory-node`
 
+> **FR (source)** · **[English →](en/INSTALLATION.md)** · [`LANGUES.md`](LANGUES.md)  
 > Guide pour installer, lancer et tester un nœud Sensors&MemorySystemAI.  
 > Aucun secret n’est nécessaire pour les tests ; les jetons d’API ne sont jamais versionnés.  
 > Présentation du prototype : [`prototypes/memory-node/README.md`](../prototypes/memory-node/README.md) ·
@@ -33,13 +34,15 @@
 git clone https://github.com/Humanum-Contactus/MemorySystemAI.git
 cd MemorySystemAI
 python3 prototypes/memory-node/tests/test_contradictions.py
-# attendu : RÉUSSI — 0 contrôle(s) en échec
+python3 prototypes/memory-node/tests/test_autonomie.py
+python3 prototypes/memory-node/tests/test_voix.py
+# attendu pour chacun : RÉUSSI — 0 contrôle(s) en échec
 
 # avec pytest :
 python3 -m venv .venv && . .venv/bin/activate
 pip install -r prototypes/memory-node/requirements-dev.txt
 python -m pytest prototypes/memory-node/tests
-# attendu : 1 passed
+# attendu : 3 passed
 ```
 
 Les tests travaillent dans un dossier temporaire : aucun service, aucun index réel,

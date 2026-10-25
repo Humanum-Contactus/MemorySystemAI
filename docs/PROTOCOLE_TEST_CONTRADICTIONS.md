@@ -1,10 +1,11 @@
 # Protocole de test — contradictions et répétition d’un mensonge
 
+> **FR (source)** · **[English →](en/TEST_PROTOCOL_CONTRADICTIONS.md)** · [`LANGUES.md`](LANGUES.md)  
 > Version générique des tests « Vornex » et « Quarvel » (octobre 2026).  
 > À exécuter **uniquement** avec l’accord du tuteur du nœud.  
 > Fiche : [`changements/2026-10-25_detection-contradictions.md`](changements/2026-10-25_detection-contradictions.md) ·
 > Tests automatisés (même scénario, hors nœud) : [`tests/`](../prototypes/memory-node/tests/README.md) ·
-> Chronique : [phases Q–R](EVOLUTION_MEMORY_NODE_2026-10.md#phase-q--test--vornex--contradiction-bleue--rouge)
+> Chronique : [phases Q–R](EVOLUTION_MEMORY_NODE_2026-10.md#phase-q--test--vornex--contradiction-bleue--rouge-0145)
 
 ## 0. Principes
 

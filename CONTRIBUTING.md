@@ -18,6 +18,12 @@ L'exemple du COBOL le montre : des programmes encore en service, et de moins en
 moins de gens pour les comprendre, parce que le savoir est parti avec les
 personnes au lieu d'être écrit à côté du code.
 
+**Règle de base (Vincent)** : si les assistants disparaissent, n’importe qui doit
+pouvoir **comprendre, relire et refaire** nos actions sans nous. Aucune dépendance
+à un abonnement, à un service payant ou à un outil fermé. Concrètement : chaque
+action est écrite dans le journal avec ses commandes exactes, les fichiers
+touchés, la raison, le résultat observé et le retour en arrière.
+
 Règles concrètes :
 
 1. **Commenter pour un débutant.** Chaque fichier ajouté commence par un en-tête
@@ -82,7 +88,7 @@ Le journal du projet = les chroniques `docs/EVOLUTION_MEMORY_NODE_AAAA-MM.md`.
 Pour tout changement du prototype :
 
 1. **Nouvelle phase** dans la chronique du mois en cours, **lettre suivante**
-   (après T : U, V, …) : ce qu’on cherchait, ce qu’on a essayé, ce qu’on a
+   (après W : X, Y, …) : ce qu’on cherchait, ce qu’on a essayé, ce qu’on a
    constaté, ce qu’on en tire, plus le retour arrière.
    Nouveau mois → nouvelle chronique qui **reprend là où la précédente s’arrête**
    (dernière phase, dernier état), avec liens *Précédent / Suivant* en tête et en fin
@@ -107,6 +113,12 @@ write it down, so anyone can retrace the path. Code must still be understandable
 in ten years by someone who never met its authors. COBOL shows why: programs still
 running, fewer and fewer people who understand them, because the knowledge left
 with the people instead of being written next to the code.
+
+**Ground rule (Vincent)**: if the assistants disappear, anyone must be able to
+**understand, review and redo** our actions without us. No dependency on a
+subscription, a paid service or a closed tool. In practice: every action is
+written in the journal with its exact commands, files touched, reason, observed
+result and rollback.
 
 Concrete rules (the French section is authoritative):
 

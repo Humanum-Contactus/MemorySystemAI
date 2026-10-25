@@ -1,7 +1,7 @@
 # Évolution juillet 2026 — prototype `memory-node`
 
 > **FR (source)** · **[English →](en/EVOLUTION_MEMORY_NODE_2026-07.md)** · [`LANGUES.md`](LANGUES.md)  
-> ← **Précédent :** *(aucun — première chronique)* · **Suivant :** [Évolution octobre 2026 (phases J–T)](EVOLUTION_MEMORY_NODE_2026-10.md) · [Index docs](README.md) · [CHANGELOG](../CHANGELOG.md)
+> ← **Précédent :** *(aucun — première chronique)* · **Suivant :** [Évolution octobre 2026 (phases J–W)](EVOLUTION_MEMORY_NODE_2026-10.md) · [Index docs](README.md) · [CHANGELOG](../CHANGELOG.md)
 
 **Auteur concept :** Vincent Vermeille (Humanum-Contactus)  
 **Implémentation prototype :** session agent Cursor (PC de contrôle LAN → laptop nœud)  
@@ -228,4 +228,4 @@ en restant fidèle à l’idée d’origine (pas un gadget chatbot).
 
 ---
 
-← **Précédent :** *(aucun — première chronique)* · **Suivant :** [Évolution octobre 2026 (phases J–T)](EVOLUTION_MEMORY_NODE_2026-10.md) · [Index docs](README.md) · [CHANGELOG](../CHANGELOG.md)
+← **Précédent :** *(aucun — première chronique)* · **Suivant :** [Évolution octobre 2026 (phases J–W)](EVOLUTION_MEMORY_NODE_2026-10.md) · [Index docs](README.md) · [CHANGELOG](../CHANGELOG.md)

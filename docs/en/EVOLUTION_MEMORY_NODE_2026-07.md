@@ -1,6 +1,7 @@
 # Evolution July 2026 — `memory-node` prototype
 
-> **[FR (source) →](../EVOLUTION_MEMORY_NODE_2026-07.md)** · EN · [`LANGUES.md`](../LANGUES.md)
+> **[FR (source) →](../EVOLUTION_MEMORY_NODE_2026-07.md)** · EN · [`LANGUES.md`](../LANGUES.md)  
+> ← **Previous:** *(none — first chronicle)* · **Next:** [Evolution October 2026 (phases J–W)](EVOLUTION_MEMORY_NODE_2026-10.md) · [Docs index](README.md) · [CHANGELOG](../../CHANGELOG.en.md)
 
 **Concept author:** Vincent Vermeille (Humanum-Contactus)  
 **Status:** first embodied demonstrator — Sensors&MemorySystemAI in power  
@@ -136,3 +137,7 @@ Teach facts → re-ask → `source: memory`; human answer → exposant ~8.
 Concept: **Vincent Vermeille**.  
 July 2026 embodiment: human + Cursor agent on the LAN, staying faithful to
 the original idea (not a chatbot gadget).
+
+---
+
+← **Previous:** *(none — first chronicle)* · **Next:** [Evolution October 2026 (phases J–W)](EVOLUTION_MEMORY_NODE_2026-10.md) · [Docs index](README.md) · [CHANGELOG](../../CHANGELOG.en.md)

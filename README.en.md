@@ -83,7 +83,9 @@ Traumatic memories (9–10) **never decay below 7**.
 Empirical and teaching-oriented: code commented for beginners, standard library
 first, every dependency justified, open formats (JSON, text, Markdown), no
 mandatory closed service, and a journal that tells the process (hypothesis,
-attempt, result, lesson), so knowledge does not leave with people. Details:
+attempt, result, lesson), so knowledge does not leave with people. Ground rule: if the assistants
+disappear, anyone must be able to understand, review and redo our actions, with no
+subscription, paid service or closed tool. Details:
 [CONTRIBUTING.md — Project philosophy](CONTRIBUTING.md#project-philosophy).
 
 ## Quick Start (code)

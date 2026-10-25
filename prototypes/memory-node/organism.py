@@ -175,6 +175,50 @@ def sh(cmd: List[str], timeout: int = 120) -> subprocess.CompletedProcess:
 
 # ─── OUTILS SENSORIELS ───────────────────────────────────────────────
 
+# Half-duplex : pas d'enregistrement micro pendant que je parle (+ garde).
+# Pourquoi : quand le nœud parle, son micro l'entend. Sans précaution, il
+# enregistrait sa propre voix et la prenait pour quelqu'un. Comment : un
+# « drapeau » partagé (threading.Event) est levé pendant toute lecture audio ;
+# l'enregistrement attend qu'il retombe, plus 0,5 s de garde (écho, fin du son).
+SPEAKING = threading.Event()
+SPEAK_GUARD_SEC = 0.5
+SPEAK_WAIT_MAX_SEC = 100.0  # > timeout aplay (90 s) : jamais de blocage infini
+_SPEAK_LOCK = threading.Lock()
+_SPEAK_ACTIVE = 0
+_SPEAK_END = 0.0
+
+
+# Lance la lecture et lève SPEAKING ; un compteur gère plusieurs lectures
+# simultanées : le drapeau ne retombe qu'à la fin de la dernière.
+def _play_tts(cmd: List[str], timeout: int = 90) -> Any:
+    """Lecture audio TTS encadrée par SPEAKING."""
+    global _SPEAK_ACTIVE, _SPEAK_END
+    with _SPEAK_LOCK:
+        _SPEAK_ACTIVE += 1
+        SPEAKING.set()
+    try:
+        return sh(cmd, timeout=timeout)
+    finally:
+        with _SPEAK_LOCK:
+            _SPEAK_ACTIVE -= 1
+            _SPEAK_END = time.monotonic()
+            if _SPEAK_ACTIVE <= 0:
+                _SPEAK_ACTIVE = 0
+                SPEAKING.clear()
+
+
+# Boucle d'attente courte (50 ms) avec un délai maximal : on préfère enregistrer
+# en retard que bloquer le nœud pour toujours.
+def _wait_not_speaking(max_wait: float = SPEAK_WAIT_MAX_SEC) -> bool:
+    """Attend la fin de la parole + garde. False si délai maximal atteint."""
+    deadline = time.monotonic() + max_wait
+    while SPEAKING.is_set() or time.monotonic() - _SPEAK_END < SPEAK_GUARD_SEC:
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(0.05)
+    return True
+
+
 def tool_speak(text: str, play: bool = True) -> Dict[str, Any]:
     """TTS : Piper (naturel) > pico > mbrola > espeak.
     play=False → synthétise seulement (pour s'écouter / se corriger)."""
@@ -197,7 +241,7 @@ def tool_speak(text: str, play: bool = True) -> Dict[str, Any]:
             )
             if p.returncode == 0 and wav.exists() and wav.stat().st_size > 100:
                 if play:
-                    sh(["aplay", "-q", str(wav)], timeout=90)
+                    _play_tts(["aplay", "-q", str(wav)], timeout=90)
                 return {
                     "ok": True,
                     "said": say,
@@ -213,7 +257,7 @@ def tool_speak(text: str, play: bool = True) -> Dict[str, Any]:
         p = sh(["pico2wave", "-l", "fr-FR", "-w", str(wav), say], timeout=30)
         if p.returncode == 0 and wav.exists() and wav.stat().st_size > 100:
             if play:
-                sh(["aplay", "-q", str(wav)], timeout=90)
+                _play_tts(["aplay", "-q", str(wav)], timeout=90)
             return {
                 "ok": True,
                 "said": say,
@@ -236,7 +280,7 @@ def tool_speak(text: str, play: bool = True) -> Dict[str, Any]:
             )
             if p.returncode == 0 and wav.exists() and wav.stat().st_size > 100:
                 if play:
-                    sh(["aplay", "-q", str(wav)], timeout=90)
+                    _play_tts(["aplay", "-q", str(wav)], timeout=90)
                 return {
                     "ok": True,
                     "said": say,
@@ -246,7 +290,7 @@ def tool_speak(text: str, play: bool = True) -> Dict[str, Any]:
                 }
             # fallback: play only without file
             if play:
-                p2 = sh(
+                p2 = _play_tts(
                     ["espeak-ng", "-v", voice, "-s", str(speed), "-a", "180", say],
                     timeout=90,
                 )
@@ -365,6 +409,9 @@ def tool_see(auto_tune: bool = True) -> Dict[str, Any]:
 def _record_wav(seconds: float) -> Dict[str, Any]:
     """Prise micro brute → WAV (sans STT)."""
     STATE.mkdir(parents=True, exist_ok=True)
+    # Half-duplex : on n'ouvre pas le micro pendant que je parle.
+    if not _wait_not_speaking():
+        log("record: délai max d'attente de fin de parole atteint — enregistrement quand même")
     wav = STATE / f"o_{int(time.time())}.wav"
     try:
         p = sh([
@@ -1949,10 +1996,10 @@ class Organism:
         return {
             "kind": "contradiction" if ids else "new",
             "id": entry.id,
-            # Constat de la phase S (journal d'octobre 2026) : cette liste contient le
-            # nouveau fait même quand `ids` est vide, d'où un contradiction_ids non vide
-            # sans contradiction. Correction en analyse (phase T), non appliquée ici.
-            "contradiction_ids": [entry.id, *ids],
+            # Liste vide s'il n'y a PAS de contradiction. Avant la phase U (journal
+            # d'octobre 2026), on renvoyait toujours [entry.id, *ids] : le client
+            # voyait une « contradiction » dès le premier fait (constat S.2).
+            "contradiction_ids": [entry.id, *ids] if ids else [],
             "ask": ask,
         }
 

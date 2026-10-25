@@ -42,6 +42,6 @@
 ## Chroniques (journal du projet)
 
 Ordre de lecture : [juillet 2026 — phases A–I](EVOLUTION_MEMORY_NODE_2026-07.md) →
-[octobre 2026 — phases J–T](EVOLUTION_MEMORY_NODE_2026-10.md).
+[octobre 2026 — phases J–W](EVOLUTION_MEMORY_NODE_2026-10.md).
 Chaque changement : une phase dans la chronique, une [fiche](changements/README.md),
 une entrée [CHANGELOG](../CHANGELOG.md). Règle : [`CONTRIBUTING.md`](../CONTRIBUTING.md#continuer-le-journal).

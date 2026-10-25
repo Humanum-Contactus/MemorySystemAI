@@ -84,6 +84,12 @@ class MemoryEntry:
     consequence: str = ""
     human_feedback: str = ""
     reinforcement_log: List[Dict] = field(default_factory=list)
+    # Souvenirs fusionnés (ex. « Autonomie inhibée » répété) : nombre total
+    # d'occurrences et horodatage ISO de chacune, ordre chronologique.
+    # Champs FACULTATIFS (phase V, octobre 2026). Ils ne sont écrits dans le JSON
+    # que s'ils sont remplis : les anciens index restent identiques et lisibles.
+    occurrences: int = 0
+    occurrence_dates: List[str] = field(default_factory=list)
 
     def __post_init__(self):
         if not 1 <= self.exposant <= 10:
@@ -115,6 +121,10 @@ class MemoryEntry:
             d["human_feedback"] = self.human_feedback
         if self.reinforcement_log:
             d["reinforcement_log"] = self.reinforcement_log
+        if self.occurrences:
+            d["occurrences"] = self.occurrences
+        if self.occurrence_dates:
+            d["occurrence_dates"] = self.occurrence_dates
         return d
 
     @classmethod
@@ -148,6 +158,8 @@ class MemoryEntry:
             consequence=d.get("consequence", ""),
             human_feedback=d.get("human_feedback", d.get("retour_humain", "")),
             reinforcement_log=d.get("reinforcement_log", d.get("renforcement_historique", [])),
+            occurrences=int(d.get("occurrences", 0) or 0),
+            occurrence_dates=list(d.get("occurrence_dates", []) or []),
         )
 
     # --- Properties ---
