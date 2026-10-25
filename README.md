@@ -82,6 +82,15 @@ Détail : **[whitepaper](whitepaper/MemorySystemAI_Whitepaper_v1.md)**.
 
 Règle clé : les traumatismes (9–10) **ne descendent jamais sous 7**.
 
+## Philosophie
+
+Démarche empirique et pédagogique : code commenté pour un débutant, bibliothèque
+standard d'abord, chaque dépendance justifiée, formats ouverts (JSON, texte,
+Markdown), aucun service fermé obligatoire, et un journal qui raconte la démarche
+(hypothèse, essai, résultat, leçon). Le but : que le savoir ne parte pas avec les
+personnes. Règle de base : si les assistants disparaissent, n’importe qui doit pouvoir
+comprendre, relire et refaire nos actions, sans abonnement, service payant ni outil fermé. Règles détaillées : [CONTRIBUTING.md — Philosophie du projet](CONTRIBUTING.md#philosophie-du-projet).
+
 ## Démarrage rapide (code)
 
 ```python
@@ -109,7 +118,15 @@ Réception → Évaluation → Enregistrement → Renforcement → Injection →
 ## Prototype incarné — `memory-node`
 
 → [`prototypes/memory-node/README.md`](prototypes/memory-node/README.md)  
-→ Chronique : [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md)
+→ Chronique : [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md)  
+→ Chronique octobre 2026 (contradictions) : [`docs/EVOLUTION_MEMORY_NODE_2026-10.md`](docs/EVOLUTION_MEMORY_NODE_2026-10.md)  
+→ **Toute la documentation** : [`docs/README.md`](docs/README.md)  
+→ **Installer et tester** : [`docs/INSTALLATION.md`](docs/INSTALLATION.md) · [`CHANGELOG.md`](CHANGELOG.md)
+
+```bash
+# test rapide, sans installation ni service
+python3 prototypes/memory-node/tests/test_contradictions.py
+```
 
 ## Feuille de route
 

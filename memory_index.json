@@ -77,7 +77,7 @@
     "inhibition_tags": ["newfs", "mkfs", "format", "partition", "efi", "disk0s1", "diskutil erase", "dd"],
     "action_context": "newfs_msdos /dev/disk0s1 (format) instead of mount /dev/disk0s1 (mount)",
     "consequence": "EFI partition wiped, OpenCore + config.plist + kexts lost, 2h manual restore by Vincent",
-    "human_feedback": "Vincent: 'Quelle connerie, c'est la première fois que je perds l'EFI depuis le début du projet'",
+    "human_feedback": "Retour humain fortement négatif (incident répété)",
     "reinforcement_log": [
       {
         "date": "2026-05-01",
@@ -99,7 +99,7 @@
     "inhibition_tags": ["rm", "-rf", "sudo", "volumes", "efi", "partition", "delete"],
     "action_context": "sudo rm -rf /Volumes/EFI_USB (partition still mounted)",
     "consequence": "EFI USB erased, 3rd time Vincent loses hours restoring (3h)",
-    "human_feedback": "Vincent: 'TU FAIS CHIER — 3ème fois, je comprends pas comment tu peux faire encore cette erreur'",
+    "human_feedback": "Retour humain fortement négatif (incident répété)",
     "reinforcement_log": [
       {
         "date": "2026-05-04",

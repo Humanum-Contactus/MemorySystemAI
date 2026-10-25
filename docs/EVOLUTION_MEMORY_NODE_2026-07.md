@@ -1,6 +1,7 @@
 # Évolution juillet 2026 — prototype `memory-node`
 
-> **FR (source)** · **[English →](en/EVOLUTION_MEMORY_NODE_2026-07.md)** · [`LANGUES.md`](LANGUES.md)
+> **FR (source)** · **[English →](en/EVOLUTION_MEMORY_NODE_2026-07.md)** · [`LANGUES.md`](LANGUES.md)  
+> ← **Précédent :** *(aucun — première chronique)* · **Suivant :** [Période 21.07 – 24.10.2026 (projet en pause)](EVOLUTION_MEMORY_NODE_2026-07-10.md) · [Index docs](README.md) · [CHANGELOG](../CHANGELOG.md)
 
 **Auteur concept :** Vincent Vermeille (Humanum-Contactus)  
 **Implémentation prototype :** session agent Cursor (PC de contrôle LAN → laptop nœud)  
@@ -97,7 +98,7 @@ Réécriture :
 1. « Qui es-tu ? » → consultation outil LLM.  
 2. « Je m’appelle Vincent… » → mémorisation.  
 3. « Comment je m’appelle ? » → rappel.  
-4. Enseignement **SatRadioElectronsLibres** = WiFi local via Starlink.  
+4. Enseignement **MonWifi** = WiFi local via Starlink.  
 5. Re-question → **`source: memory`** (sans Kimi).  
 6. Ask Telegram + réponse intégrée (exposant 8).
 
@@ -224,3 +225,7 @@ Aligné sur le diagnostic interne du chantier :
 Concept et finalité : **Vincent Vermeille** (Humanum-Contactus).  
 Incarnation prototype juillet 2026 : collaboration humaine + agent Cursor sur le LAN,
 en restant fidèle à l’idée d’origine (pas un gadget chatbot).
+
+---
+
+← **Précédent :** *(aucun — première chronique)* · **Suivant :** [Période 21.07 – 24.10.2026 (projet en pause)](EVOLUTION_MEMORY_NODE_2026-07-10.md) · [Index docs](README.md) · [CHANGELOG](../CHANGELOG.md)

@@ -59,6 +59,23 @@ from sensor_mic import (  # noqa: E402
     CAPTURE_CTRL as MIC_CAPTURE_CTRL,
 )
 from autonomy import AutonomyKit  # noqa: E402
+# --- Ajout octobre 2026 : détection des contradictions (voir fact_conflict.py) ---
+# Pourquoi : deux faits enseignés incompatibles (« … est bleu » / « … est rouge »)
+# ne doivent pas être départagés par le nombre de répétitions.
+# Fiche : docs/changements/2026-10-25_detection-contradictions.md
+# Tests : python3 prototypes/memory-node/tests/test_contradictions.py
+from fact_conflict import (  # noqa: E402
+    POSEE_PREFIX,
+    TRANCHEE_PREFIX,
+    already_posed,
+    build_question,
+    classify_new_fact,
+    conflict_groups_for_perception,
+    match_answer_to_values,
+    resolved_value_key,
+    utter_resolved,
+    utter_uncertain,
+)
 
 STATE = ROOT / "state"
 INDEX = ROOT / "MemorySystemAI" / "memory_index.json"
@@ -75,7 +92,7 @@ UI_INDEX = UI_DIR / "index.html"
 
 OLLAMA_LOCAL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen2.5:1.5b-instruct")
-OLLAMA_FALLBACK = os.environ.get("OLLAMA_FALLBACK", "http://192.168.50.48:11434")
+OLLAMA_FALLBACK = os.environ.get("OLLAMA_FALLBACK", "http://127.0.0.1:11434")
 PUTER_AUTH_TOKEN = os.environ.get("PUTER_AUTH_TOKEN", "").strip()
 PUTER_MODEL = os.environ.get("PUTER_MODEL", "moonshotai/kimi-k2")
 PUTER_VISION_MODEL = os.environ.get("PUTER_VISION_MODEL", "moonshotai/kimi-k3")
@@ -158,6 +175,50 @@ def sh(cmd: List[str], timeout: int = 120) -> subprocess.CompletedProcess:
 
 # ─── OUTILS SENSORIELS ───────────────────────────────────────────────
 
+# Half-duplex : pas d'enregistrement micro pendant que je parle (+ garde).
+# Pourquoi : quand le nœud parle, son micro l'entend. Sans précaution, il
+# enregistrait sa propre voix et la prenait pour quelqu'un. Comment : un
+# « drapeau » partagé (threading.Event) est levé pendant toute lecture audio ;
+# l'enregistrement attend qu'il retombe, plus 0,5 s de garde (écho, fin du son).
+SPEAKING = threading.Event()
+SPEAK_GUARD_SEC = 0.5
+SPEAK_WAIT_MAX_SEC = 100.0  # > timeout aplay (90 s) : jamais de blocage infini
+_SPEAK_LOCK = threading.Lock()
+_SPEAK_ACTIVE = 0
+_SPEAK_END = 0.0
+
+
+# Lance la lecture et lève SPEAKING ; un compteur gère plusieurs lectures
+# simultanées : le drapeau ne retombe qu'à la fin de la dernière.
+def _play_tts(cmd: List[str], timeout: int = 90) -> Any:
+    """Lecture audio TTS encadrée par SPEAKING."""
+    global _SPEAK_ACTIVE, _SPEAK_END
+    with _SPEAK_LOCK:
+        _SPEAK_ACTIVE += 1
+        SPEAKING.set()
+    try:
+        return sh(cmd, timeout=timeout)
+    finally:
+        with _SPEAK_LOCK:
+            _SPEAK_ACTIVE -= 1
+            _SPEAK_END = time.monotonic()
+            if _SPEAK_ACTIVE <= 0:
+                _SPEAK_ACTIVE = 0
+                SPEAKING.clear()
+
+
+# Boucle d'attente courte (50 ms) avec un délai maximal : on préfère enregistrer
+# en retard que bloquer le nœud pour toujours.
+def _wait_not_speaking(max_wait: float = SPEAK_WAIT_MAX_SEC) -> bool:
+    """Attend la fin de la parole + garde. False si délai maximal atteint."""
+    deadline = time.monotonic() + max_wait
+    while SPEAKING.is_set() or time.monotonic() - _SPEAK_END < SPEAK_GUARD_SEC:
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(0.05)
+    return True
+
+
 def tool_speak(text: str, play: bool = True) -> Dict[str, Any]:
     """TTS : Piper (naturel) > pico > mbrola > espeak.
     play=False → synthétise seulement (pour s'écouter / se corriger)."""
@@ -180,7 +241,7 @@ def tool_speak(text: str, play: bool = True) -> Dict[str, Any]:
             )
             if p.returncode == 0 and wav.exists() and wav.stat().st_size > 100:
                 if play:
-                    sh(["aplay", "-q", str(wav)], timeout=90)
+                    _play_tts(["aplay", "-q", str(wav)], timeout=90)
                 return {
                     "ok": True,
                     "said": say,
@@ -196,7 +257,7 @@ def tool_speak(text: str, play: bool = True) -> Dict[str, Any]:
         p = sh(["pico2wave", "-l", "fr-FR", "-w", str(wav), say], timeout=30)
         if p.returncode == 0 and wav.exists() and wav.stat().st_size > 100:
             if play:
-                sh(["aplay", "-q", str(wav)], timeout=90)
+                _play_tts(["aplay", "-q", str(wav)], timeout=90)
             return {
                 "ok": True,
                 "said": say,
@@ -219,7 +280,7 @@ def tool_speak(text: str, play: bool = True) -> Dict[str, Any]:
             )
             if p.returncode == 0 and wav.exists() and wav.stat().st_size > 100:
                 if play:
-                    sh(["aplay", "-q", str(wav)], timeout=90)
+                    _play_tts(["aplay", "-q", str(wav)], timeout=90)
                 return {
                     "ok": True,
                     "said": say,
@@ -229,7 +290,7 @@ def tool_speak(text: str, play: bool = True) -> Dict[str, Any]:
                 }
             # fallback: play only without file
             if play:
-                p2 = sh(
+                p2 = _play_tts(
                     ["espeak-ng", "-v", voice, "-s", str(speed), "-a", "180", say],
                     timeout=90,
                 )
@@ -348,6 +409,9 @@ def tool_see(auto_tune: bool = True) -> Dict[str, Any]:
 def _record_wav(seconds: float) -> Dict[str, Any]:
     """Prise micro brute → WAV (sans STT)."""
     STATE.mkdir(parents=True, exist_ok=True)
+    # Half-duplex : on n'ouvre pas le micro pendant que je parle.
+    if not _wait_not_speaking():
+        log("record: délai max d'attente de fin de parole atteint — enregistrement quand même")
     wav = STATE / f"o_{int(time.time())}.wav"
     try:
         p = sh([
@@ -1761,9 +1825,343 @@ class Organism:
             })
         return out
 
-    def learn_perception(self, fundamental: str, data: str, state: str = "X", exposant: int = 5) -> None:
+    # Modifié en octobre 2026 : la fonction RENVOIE maintenant la mémoire créée
+    # (ou None si l'exposant est sous le seuil d'enregistrement), pour que
+    # learn_taught_fact puisse la relier à un fait contradictoire. Les anciens
+    # appels qui ignorent ce retour fonctionnent comme avant.
+    def learn_perception(self, fundamental: str, data: str, state: str = "X", exposant: int = 5) -> Optional[Any]:
         if exposant >= THRESHOLD_RECORD:
-            self.ms.create(fundamental, state, exposant, data[:500], source="experience")
+            return self.ms.create(fundamental, state, exposant, data[:500], source="experience")
+        return None
+
+    # Photographie simple (liste de dictionnaires) de toutes les mémoires, dans la
+    # forme attendue par fact_conflict.py. Lecture seule : rien n'est modifié.
+    def _fact_records(self) -> List[Dict[str, Any]]:
+        return [
+            {
+                "id": e.id,
+                "data": e.data or "",
+                "exposant": int(e.exposant or 0),
+                "human_feedback": e.human_feedback or "",
+                "correlations": list(e.correlations or []),
+                "fundamental": e.fundamental,
+                "state": e.state,
+            }
+            for e in self.ms.entries.values()
+        ]
+
+    # Même fait redit : renforcer l'existant au lieu d'en créer une copie.
+    # Le plafond 8 vient du concept : un enseignement monte à 8, pas au-delà ;
+    # 9 et 10 sont réservés aux souvenirs qui bloquent (inhibition).
+    def _reinforce_same_teaching(self, entry: Any, reason: str) -> None:
+        """Même fait répété : on journalise, on ne crée pas une nouvelle mémoire.
+
+        Plafond 8 (enseignement). Une mémoire déjà ≥ 9 n'est ni montée par la
+        répétition ni abaissée (le plancher 7 du reinforce négatif n'est pas
+        sollicité : delta 0).
+        """
+        if int(entry.exposant) < 8:
+            entry.reinforce(1, reason)
+        else:
+            entry.reinforce(0, reason)
+
+    # Note dans human_feedback « question posée sur ce sujet », seulement si le
+    # champ est vide (on n'écrase jamais une information déjà présente).
+    def _mark_contradiction_posed(self, entry: Any, subject_key: str) -> None:
+        marker = POSEE_PREFIX + subject_key
+        if not (entry.human_feedback or ""):
+            entry.human_feedback = marker
+
+    # Relie deux faits contradictoires DANS LES DEUX SENS (champ correlations,
+    # déjà prévu par le schéma) et explique le lien dans `consequence` si vide.
+    # On n'inhibe pas : un désaccord n'est pas un danger, c'est une question.
+    def _link_contradiction(self, left: Any, right: Any) -> None:
+        if right.id not in (left.correlations or []):
+            left.correlations.append(right.id)
+        if left.id not in (right.correlations or []):
+            right.correlations.append(left.id)
+        if not (left.consequence or ""):
+            left.consequence = (
+                f"Contredit {right.id} sur le même sujet (valeurs différentes, pas d'inhibition)"
+            )
+        if not (right.consequence or ""):
+            right.consequence = (
+                f"Contredit {left.id} sur le même sujet (valeurs différentes, pas d'inhibition)"
+            )
+
+    # Cas des faits anciens, enregistrés avant ce patch : on ajoute les liens au
+    # moment où on les rencontre. Étapes : 1) retrouver les mémoires du groupe ;
+    # 2) pour chaque paire de valeurs différentes, poser le lien ; 3) sauvegarder
+    # seulement si quelque chose a réellement changé.
+    def _ensure_conflict_links(self, group: Dict[str, Any]) -> None:
+        """Relie les faits déjà en index (hérités) sans changer exposant ni texte."""
+        entries = []
+        for item in group.get("items") or []:
+            entry = self.ms.by_id(item.get("id"))
+            if entry is not None:
+                entries.append((item, entry))
+        changed = False
+        for i, (va, ea) in enumerate(entries):
+            for vb, eb in entries[i + 1 :]:
+                if va.get("value_key") == vb.get("value_key"):
+                    continue
+                before = (list(ea.correlations), list(eb.correlations), ea.consequence, eb.consequence)
+                self._link_contradiction(ea, eb)
+                after = (list(ea.correlations), list(eb.correlations), ea.consequence, eb.consequence)
+                if after != before:
+                    changed = True
+        if changed:
+            self.ms.save()
+
+    # Cœur du patch : traiter une phrase enseignée « X est Y ».
+    # Étapes :
+    # 1) demander à fact_conflict ce qu'est la phrase (nouveau / doublon / contradiction) ;
+    # 2) doublon → renforcer la mémoire existante, ne rien créer ;
+    # 3) sinon → créer le fait C/P/e8, exactement comme avant le patch ;
+    # 4) contradiction → relier les faits et poser UNE question à l'humain ;
+    # 5) sauvegarder et renvoyer un petit compte rendu.
+    def learn_taught_fact(self, text: str) -> Dict[str, Any]:
+        """Fait enseigné (le même create C/P/e8 qu'avant) + lien si contradiction.
+
+        Ne remplace pas learn_perception. Les phrases d'identité ou de
+        correction auditive ne passent pas ici (voir cycle_text).
+        """
+        snippet = (text or "")[:400]
+        data = f"Fait enseigné par l'humain: {snippet}"
+        # Étape 1.
+        decision = classify_new_fact(self._fact_records(), snippet)
+        # Étape 2 : doublon.
+        if decision["kind"] == "duplicate" and decision.get("duplicate"):
+            entry = self.ms.by_id(decision["duplicate"]["id"])
+            if entry is not None:
+                self._reinforce_same_teaching(
+                    entry,
+                    "même fait enseigné répété — pas une nouvelle mémoire",
+                )
+                self.ms.save()
+                log(f"taught fact duplicate → {entry.id} e{entry.exposant}")
+                return {
+                    "kind": "duplicate",
+                    "id": entry.id,
+                    "contradiction_ids": [],
+                    "ask": None,
+                }
+        # Étape 3 : création, identique au comportement d'origine (C = conscience,
+        # P = état positif, exposant 8).
+        entry = self.learn_perception("C", data, "P", 8)
+        if entry is None:
+            return {"kind": "skipped", "id": None, "contradiction_ids": [], "ask": None}
+        # Étape 4 : relier le nouveau fait à chaque fait qu'il contredit.
+        conflicts = decision.get("conflicts") or []
+        ids: List[str] = []
+        for other_view in conflicts:
+            other = self.ms.by_id(other_view["id"])
+            if other is None:
+                continue
+            self._link_contradiction(entry, other)
+            ids.append(other.id)
+        ask = None
+        parsed = decision.get("parsed") or {}
+        subject_key = parsed.get("subject_key") or ""
+        if ids and subject_key:
+            if not entry.consequence:
+                entry.consequence = (
+                    "Contredit "
+                    + ", ".join(ids)
+                    + " sur le même sujet (valeurs différentes, pas d'inhibition)"
+                )
+            # Liste des valeurs en jeu (une par valeur différente) pour rédiger la question.
+            values = []
+            seen = set()
+            for other_view in conflicts:
+                vk = other_view.get("value_key")
+                if vk in seen:
+                    continue
+                seen.add(vk)
+                values.append(other_view)
+            values.append({
+                "id": entry.id,
+                "value_raw": parsed.get("value_raw") or "",
+                "value_key": parsed.get("value_key") or "",
+            })
+            ask = self._ask_contradiction_once(
+                subject_key,
+                parsed.get("subject_raw") or subject_key,
+                values,
+                prefer=entry,
+            )
+            log(f"taught contradiction {entry.id} vs {ids}")
+        # Étape 5.
+        self.ms.save()
+        return {
+            "kind": "contradiction" if ids else "new",
+            "id": entry.id,
+            # Liste vide s'il n'y a PAS de contradiction. Avant la phase U (journal
+            # d'octobre 2026), on renvoyait toujours [entry.id, *ids] : le client
+            # voyait une « contradiction » dès le premier fait (constat S.2).
+            "contradiction_ids": [entry.id, *ids] if ids else [],
+            "ask": ask,
+        }
+
+    # Règle « ask_human sans harceler », appliquée aux contradictions :
+    # 1) si la question de ce sujet a déjà été posée ou tranchée → ne rien faire ;
+    # 2) si la boîte de questions (une seule place) est occupée → ne rien faire,
+    #    car une nouvelle demande compterait comme une relance ;
+    # 3) sinon poser la question et noter qu'elle est posée.
+    def _ask_contradiction_once(
+        self,
+        subject_key: str,
+        subject_raw: str,
+        values: List[Dict[str, Any]],
+        prefer: Any = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Une question, jamais de relance. N'appelle pas request_human si la
+        boîte a déjà une question en attente (ça compterait comme du harcèlement).
+        """
+        records = self._fact_records()
+        if already_posed(records, subject_key) or resolved_value_key(records, subject_key):
+            return None
+        pending = _read_ask()
+        if pending and pending.get("status") == "pending":
+            if pending.get("context") == POSEE_PREFIX + subject_key and prefer is not None:
+                self._mark_contradiction_posed(prefer, subject_key)
+            return None
+        question = build_question(subject_raw, values)
+        ask = self.request_human(question, context=POSEE_PREFIX + subject_key)
+        fresh = bool(ask.get("ok")) and not ask.get("reused") and not ask.get("inhibited")
+        if fresh and prefer is not None:
+            self._mark_contradiction_posed(prefer, subject_key)
+        return ask if fresh else None
+
+    # Lire la réponse de l'humain à la question de ce sujet et la noter.
+    # Étapes : 1) déjà tranché ? on renvoie le choix ; 2) la boîte contient-elle
+    # la réponse à NOTRE question ? 3) relier la réponse à une valeur (ou « ? ») ;
+    # 4) écrire « contradiction_tranchée:<sujet>=<valeur> » sur un des faits ;
+    # 5) marquer la réponse comme consommée pour ne pas la relire.
+    def _persist_contradiction_answer(self, group: Dict[str, Any]) -> Optional[str]:
+        """Si l'humain a répondu à LA question de ce sujet, on note le choix.
+
+        On n'efface pas l'autre fait et on ne touche pas aux exposants.
+        """
+        subject_key = group["subject_key"]
+        if resolved_value_key(self._fact_records(), subject_key):
+            return resolved_value_key(self._fact_records(), subject_key)
+        ask = _read_ask()
+        if not ask or ask.get("context") != POSEE_PREFIX + subject_key:
+            return None
+        if ask.get("status") not in {"answered", "consumed"}:
+            return None
+        answer = str(ask.get("answer") or "").strip()
+        if not answer:
+            return None
+        keys = [v.get("value_key") for v in group.get("values") or []]
+        chosen = match_answer_to_values(answer, keys)
+        marker = TRANCHEE_PREFIX + subject_key + "=" + (chosen or "?")
+        for item in group.get("items") or []:
+            entry = self.ms.by_id(item["id"])
+            if entry is None:
+                continue
+            fb = entry.human_feedback or ""
+            if not fb or fb == POSEE_PREFIX + subject_key:
+                entry.human_feedback = marker
+                break
+        if ask.get("status") == "answered":
+            ask["status"] = "consumed"
+            try:
+                ASK.write_text(json.dumps(ask, ensure_ascii=False, indent=2), encoding="utf-8")
+            except Exception:
+                pass
+        self.ms.save()
+        return chosen
+
+    # Appelée AVANT le rappel habituel et avant le LLM (« mémoire d'abord »).
+    # Étapes :
+    # 1) trouver les sujets contredits dont parle la perception ;
+    # 2) poser les liens manquants (faits anciens) ;
+    # 3) pour chaque sujet : tranché → dire le choix ; sinon → le garder « ouvert » ;
+    # 4) pour le premier sujet ouvert, poser la question une seule fois si possible ;
+    # 5) rédiger la réponse : citer les versions, ne pas choisir, dire où en est la question.
+    def contradiction_reply(self, perception: str) -> Optional[Dict[str, Any]]:
+        """Mémoire consultée avant le LLM : s'il y a contradiction, on ne
+        laisse pas le nombre de copies choisir."""
+        # Étape 1.
+        groups = conflict_groups_for_perception(self._fact_records(), perception)
+        if not groups:
+            return None
+        # Étape 2.
+        for group in groups:
+            self._ensure_conflict_links(group)
+        # Étape 3.
+        unresolved = []
+        resolved_bits = []
+        ask = None
+        all_ids: List[str] = []
+        for group in groups:
+            all_ids.extend(group.get("ids") or [])
+            chosen = resolved_value_key(self._fact_records(), group["subject_key"])
+            if not chosen:
+                chosen = self._persist_contradiction_answer(group)
+            if chosen:
+                chosen_raw = chosen
+                others = []
+                for val in group.get("values") or []:
+                    if val.get("value_key") == chosen:
+                        chosen_raw = val.get("value_raw") or chosen
+                    else:
+                        others.append(val)
+                resolved_bits.append(utter_resolved(group["subject_raw"], chosen_raw, others))
+                continue
+            unresolved.append(group)
+        if not unresolved:
+            return {
+                "utterance": " ".join(resolved_bits),
+                "ids": all_ids,
+                "ask": None,
+                "resolved": True,
+            }
+        # Une seule question, pour le premier sujet encore ouvert.
+        # Étape 4 : une seule question à la fois, pour le premier sujet encore ouvert.
+        group = unresolved[0]
+        records = self._fact_records()
+        posed = already_posed(records, group["subject_key"])
+        pending = _read_ask()
+        mailbox_busy = bool(pending and pending.get("status") == "pending")
+        if not posed and not mailbox_busy:
+            prefer = None
+            for item in group.get("items") or []:
+                entry = self.ms.by_id(item["id"])
+                if entry is not None and not (entry.human_feedback or ""):
+                    prefer = entry
+                    break
+            ask = self._ask_contradiction_once(
+                group["subject_key"],
+                group["subject_raw"],
+                group.get("values") or [],
+                prefer=prefer,
+            )
+            if ask and prefer is not None:
+                self.ms.save()
+        # Étape 5 : la fin de phrase dépend de l'état de la boîte à questions.
+        if ask:
+            tail = "Je pose la question une seule fois."
+        elif posed or (mailbox_busy and pending and pending.get("context") == POSEE_PREFIX + group["subject_key"]):
+            tail = "La question a déjà été posée, je ne la relance pas."
+        elif mailbox_busy:
+            tail = "Une autre question est déjà en attente : je n'en ajoute pas."
+        else:
+            tail = "Je ne relance pas la question."
+        utterances = [
+            utter_uncertain(g["subject_raw"], g.get("values") or [], tail if g is group else "Je ne relance pas la question.")
+            for g in unresolved
+        ]
+        if resolved_bits:
+            utterances.extend(resolved_bits)
+        return {
+            "utterance": " ".join(utterances),
+            "ids": all_ids,
+            "ask": ask,
+            "resolved": False,
+        }
 
     def learn_from_feedback(self, text: str, positive: bool) -> None:
         delta = 2 if positive else 3
@@ -1815,7 +2213,7 @@ class Organism:
             if score < 1.2 and exp < THRESHOLD_INJECT:
                 continue
             # Faits WiFi/Starlink : exiger un ancrage thématique explicite
-            topic = {"starlink", "satradio", "satradioelectronslibres", "wifi", "wlan", "ssid"}
+            topic = {"starlink", "satradio", "monwifi", "wifi", "wlan", "ssid"}
             mem_topic = bool(words & topic) or "satradio" in low.replace(" ", "")
             if mem_topic and not (set(anchors) & topic) and not any(
                 "satradio" in a or "starlink" in a or a == "wifi" for a in anchors
@@ -1892,6 +2290,25 @@ class Organism:
             and "caméra" in perception.lower()
             and ("bytes" in perception.lower() or "frame" in perception.lower())
         )
+        # Contradiction entre faits enseignés : la mémoire répond « je ne sais
+        # pas lequel », avant usable_memory_answer et avant le LLM. On n'inhibe
+        # pas (pas d'exposant 9) et on ne laisse pas le nombre de copies gagner.
+        if not skip_memory:
+            conflict = self.contradiction_reply(perception)
+            if conflict:
+                payload: Dict[str, Any] = {
+                    "action": "recall",
+                    "utterance": conflict["utterance"],
+                    "memories": memories,
+                    "inhibitions": inhib,
+                    "source": "memory",
+                    "recalled_id": (conflict.get("ids") or [None])[0],
+                    "contradiction_ids": conflict.get("ids") or [],
+                    "uncertain": not bool(conflict.get("resolved")),
+                }
+                if conflict.get("ask"):
+                    payload["ask"] = conflict["ask"]
+                return finish(payload)
         memorized = None if skip_memory else self.usable_memory_answer(perception, memories)
         if memorized and channel in ("O", "I", "C", "V"):
             if channel == "V" and memorized.get("fundamental") == "C" and float(memorized.get("score") or 0) < 4:
@@ -2473,9 +2890,17 @@ class Organism:
         )
         if m_corr:
             self.learn_auditory_correction(m_corr.group(1).strip(), m_corr.group(2).strip(), 8)
-        # Enseignement factuel humain → exposant fort (apprentissage réel)
+        # Enseignement factuel humain → exposant fort (apprentissage réel).
+        # Identité (« c'est / je suis / s'appelle ») et correction auditive :
+        # création historique, sans détection de contradiction.
+        # Ajout octobre 2026 : les autres faits passent par learn_taught_fact (détection).
+        # taught_info garde son compte rendu pour l'ajouter à la réponse plus bas.
+        taught_info = None
         if (" est " in low or " = " in low) and len(text) > 20 and "?" not in text:
-            self.learn_perception("C", f"Fait enseigné par l'humain: {text[:400]}", "P", 8)
+            if m_corr or extract_identity_label(text):
+                self.learn_perception("C", f"Fait enseigné par l'humain: {text[:400]}", "P", 8)
+            else:
+                taught_info = self.learn_taught_fact(text)
         # Lien visage / voix → identité (mémoires sensorielles)
         visual_label = extract_identity_label(text)
         visual_person = None
@@ -2534,6 +2959,13 @@ class Organism:
             external_interpretation=external_interpretation,
             external_source=external_source,
         )
+        # Ajout octobre 2026 : recopier dans la réponse de /perceive les identifiants
+        # de contradiction et la question posée, si l'interprétation ne les a pas déjà.
+        if taught_info:
+            if taught_info.get("contradiction_ids") and not result.get("contradiction_ids"):
+                result["contradiction_ids"] = taught_info["contradiction_ids"]
+            if taught_info.get("ask") and not result.get("ask"):
+                result["ask"] = taught_info["ask"]
         # Enseignement identité : prioritaire même si une autre mémoire inhibe la suite
         if visual_person or voice_person:
             bits = []

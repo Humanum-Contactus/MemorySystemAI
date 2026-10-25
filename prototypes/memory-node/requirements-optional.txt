@@ -1,0 +1,8 @@
+# Dépendances OPTIONNELLES du nœud memory-node.
+# Le cœur (memory_system.py, organism.py, fact_conflict.py, dedup_taught_facts.py)
+# n'utilise que la bibliothèque standard Python (testé avec Python 3.13).
+# Liste établie à partir des imports réels (importés à la demande, dans un try) :
+numpy                    # voice_memory.py, visual_memory.py, sensor_camera.py
+opencv-python-headless   # visual_memory.py, sensor_camera.py (recadrage visage, analyse image)
+Pillow                   # visual_memory.py (repli image)
+faster-whisper           # organism.py (transcription sur /hear)

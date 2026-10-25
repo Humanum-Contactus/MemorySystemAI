@@ -1,0 +1,2 @@
+# Outils de test (facultatif : les tests tournent aussi sans pytest)
+pytest>=8

@@ -1,6 +1,6 @@
 # Prototype `memory-node` — embodied organism
 
-> **[FR →](README.md)** · EN
+> **[FR (source) →](README.md)** · EN · [`LANGUES.md`](../../docs/LANGUES.md)
 
 First cut of a **Sensors&MemorySystemAI node**: near-blank slate, sensory tools,
 external LLM consultation, learning by exposants, local graphical nursery.
@@ -13,7 +13,10 @@ Documentation:
 
 | Doc | Content |
 |-----|---------|
-| [Evolution chronicle (EN)](../../docs/en/EVOLUTION_MEMORY_NODE_2026-07.md) | Build history |
+| [Evolution chronicle July 2026 (EN)](../../docs/en/EVOLUTION_MEMORY_NODE_2026-07.md) | Build history (phases A–I) |
+| [Evolution chronicle October 2026 (EN)](../../docs/en/EVOLUTION_MEMORY_NODE_2026-10.md) | Phases J–W: contradictions, autonomy, voice |
+| [Installation and tests (EN)](../../docs/en/INSTALLATION.md) | Install, configure, test |
+| [Change records (EN)](../../docs/en/changements/README.md) | Why / what / test / rollback |
 | [Architecture & API (EN)](../../docs/en/ARCHITECTURE_MEMORY_NODE.md) | Flows + HTTP |
 | [Modules (EN)](../../docs/en/MODULES_MEMORY_NODE.md) | File-by-file |
 | [Why it matters (EN)](../../docs/en/WHY_IT_MATTERS.md) | Research intent |
@@ -33,6 +36,12 @@ Documentation:
 | `ui/index.html` | Nursery kiosk |
 | `requirements.txt` | Indicative Python deps |
 | `systemd/memory-node.service.example` | systemd unit |
+| `config.example.env` | Configuration example, no secret |
+| `fact_conflict.py` | Detects contradictions between taught facts |
+| `dedup_taught_facts.py` | Manual duplicate merge (dry-run by default) |
+| `tests/` | Automated tests (`test_contradictions.py`, `test_autonomie.py`, `test_voix.py`) — [README](tests/README.en.md) |
+| `maintenance/` | Manual off-server scripts ("Autonomie inhibée" merge, VP002 deletion) — [README](maintenance/README.en.md) |
+| `systemd/memory-node.service.generic.example` | Generic systemd unit |
 | `openclaw-skill/` | Telegram bridge (**bridge**, not concept core) |
 
 ---

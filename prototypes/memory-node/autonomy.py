@@ -86,6 +86,55 @@ class AutonomyKit:
         self.last_listen = self.state / "autonomy_last_listen.json"
         self.tools_path = self.state / "crafted_tools.json"
 
+    # Cherche s'il existe déjà un souvenir « Autonomie inhibée » au texte identique.
+    # Pourquoi : un même refus répété toutes les 5 minutes créait des centaines de
+    # copies. Comment : on compare le texte normalisé (minuscules, espaces) parmi les
+    # souvenirs C/N ; s'il y en a plusieurs, on prend le plus fort puis le plus ancien.
+    def _same_inhibition_memory(self, data: str) -> Any:
+        """Souvenir « Autonomie inhibée » au texte identique (C/N), s'il existe.
+
+        Choix stable : exposant le plus haut, puis id le plus ancien.
+        """
+        if not hasattr(self.org, "_reinforce_same_teaching"):
+            return None
+        key = " ".join((data or "")[:500].lower().split())
+        best = None
+        best_rank = None
+        for e in self.org.ms.entries.values():
+            if e.fundamental != "C" or e.state != "N":
+                continue
+            if " ".join((e.data or "").lower().split()) != key:
+                continue
+            try:
+                num = int(str(e.id).lstrip("Mm") or 0)
+            except ValueError:
+                num = 0
+            rank = (-int(e.exposant or 0), num)
+            if best_rank is None or rank < best_rank:
+                best, best_rank = e, rank
+        return best
+
+    @staticmethod
+    # Ajoute une occurrence datée au souvenir. On garde le NOMBRE et la DATE de
+    # chaque refus (décision de Vincent, phase V) : fusionner ne doit pas effacer
+    # l'histoire.
+    def _count_occurrence(entry: Any, *, already: bool) -> None:
+        """Compteur + horodatage ISO local (Europe/Zurich sur le nœud).
+
+        Un souvenir existant sans compteur compte déjà pour 1 occurrence.
+        """
+        import datetime as _dt
+
+        if not hasattr(entry, "occurrences"):
+            return
+        n = int(getattr(entry, "occurrences", 0) or 0)
+        if already and n == 0:
+            n = 1
+        entry.occurrences = n + 1 if already else max(1, n)
+        entry.occurrence_dates.append(
+            _dt.datetime.now().astimezone().isoformat(timespec="seconds")
+        )
+
     # ── Règle d'or ───────────────────────────────────────────────────
 
     def through_memory(
@@ -119,12 +168,22 @@ class AutonomyKit:
                 f"Mémoire {(why or {}).get('id', '?')} : {str(snippet)[:160]}"
             )
             # Même un refus s'enregistre (expérience N légère)
-            self.org.learn_perception(
-                "C",
-                f"Autonomie inhibée: {action_text[:80]} — {str(snippet)[:200]}",
-                "N",
-                6,
-            )
+            data_inh = f"Autonomie inhibée: {action_text[:80]} — {str(snippet)[:200]}"
+            # Même refus déjà connu → on renforce et on compte ; sinon on crée le souvenir.
+            twin = self._same_inhibition_memory(data_inh)
+            if twin is not None:
+                # Même refus répété : renforcer (même règle que les faits
+                # enseignés, plafond 8) au lieu de créer un doublon.
+                self.org._reinforce_same_teaching(
+                    twin, "même inhibition d'autonomie répétée — pas une nouvelle mémoire"
+                )
+                self._count_occurrence(twin, already=True)
+                self.org.ms.save()
+            else:
+                created = self.org.learn_perception("C", data_inh, "N", 6)
+                if created is not None:
+                    self._count_occurrence(created, already=False)
+                    self.org.ms.save()
             result["learned"] = True
             return result
 
@@ -792,7 +851,7 @@ class AutonomyKit:
         # Empreinte : ma voix synthétique (optionnel, léger)
         try:
             if hasattr(self.org, "voice") and Path(wav).exists():
-                self.org.voice.process_wav(Path(wav), transcript=intended)
+                # Pas d'empreinte vocale sur ma propre voix TTS (créait VP002).
                 self.org.learn_perception(
                     "O",
                     f"Voix synthétique auto-écoutée (engine={spoken.get('engine')}) "

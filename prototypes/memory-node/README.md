@@ -15,6 +15,8 @@ Documentation :
 | Doc | Contenu |
 |-----|---------|
 | [Chronique d’évolution](../../docs/EVOLUTION_MEMORY_NODE_2026-07.md) | Histoire du chantier |
+| [Chronique octobre 2026](../../docs/EVOLUTION_MEMORY_NODE_2026-10.md) | Contradictions, dédoublonnage |
+| [Installation & tests](../../docs/INSTALLATION.md) | Prérequis, venv, systemd, configuration |
 | [Architecture & API](../../docs/ARCHITECTURE_MEMORY_NODE.md) | Flux + routes HTTP |
 | [Modules](../../docs/MODULES_MEMORY_NODE.md) | Référence fichier par fichier |
 | [Pourquoi ça compte](../../docs/POURQUOI_CA_COMPTE.md) | Sens de la recherche |
@@ -34,6 +36,14 @@ Documentation :
 | `autonomy.py` | Exploration autonome (crible mémoire + exposants) |
 | `ui/index.html` | Nursery kiosk |
 | `requirements.txt` | Dépendances Python indicatives |
+| `requirements-optional.txt` | Dépendances optionnelles (issues des imports réels) |
+| `requirements-dev.txt` | Outils de test (pytest) |
+| `config.example.env` | Exemple de configuration, sans secret |
+| `fact_conflict.py` | Détection des contradictions entre faits enseignés |
+| `dedup_taught_facts.py` | Fusion manuelle des doublons (dry-run par défaut) |
+| `tests/` | Tests automatisés (`test_contradictions.py`, `test_autonomie.py`, `test_voix.py`) |
+| `maintenance/` | Scripts manuels hors serveur (fusion « Autonomie inhibée », suppression VP002) — [README](maintenance/README.md) |
+| `systemd/memory-node.service.generic.example` | Unit systemd générique |
 | `systemd/memory-node.service.example` | Unit systemd |
 | `openclaw-skill/` | Pont Telegram (**pont**, pas le cœur du concept) |
 
@@ -84,6 +94,20 @@ sudo systemctl enable --now memory-node.service
 ```
 
 Voir `systemd/memory-node.service.example`.
+
+---
+
+## Tests
+
+```bash
+# depuis la racine du dépôt
+python3 prototypes/memory-node/tests/test_contradictions.py   # 97 contrôles
+python3 -m pytest prototypes/memory-node/tests                # si pytest est installé
+```
+
+Détail : [`tests/README.md`](tests/README.md).  
+Sur un nœud réel : [`docs/PROTOCOLE_TEST_CONTRADICTIONS.md`](../../docs/PROTOCOLE_TEST_CONTRADICTIONS.md).
+Installation complète : [`docs/INSTALLATION.md`](../../docs/INSTALLATION.md).
 
 ---
 

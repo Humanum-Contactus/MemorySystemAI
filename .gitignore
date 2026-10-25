@@ -15,3 +15,8 @@
 # Private session journal (do not publish)
 docs/JOURNAL_COGITATION_BEBE_IA.txt
 JOURNAL_COGITATION_BEBE_IA.txt
+
+# Caches Python
+__pycache__/
+*.pyc
+.pytest_cache/

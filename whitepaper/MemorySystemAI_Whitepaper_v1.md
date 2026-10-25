@@ -678,11 +678,11 @@ Les incidents documentés dans ce papier prouvent que le problème est réel. La
 
 ### Soutien
 
-Ce concept est né dans le cadre du travail quotidien de l'association **Humanum Contactus** et de sa webradio **Radio Electrons Libre** (electronslibres.ch), une association à but non lucratif basée à Lugnorre, Suisse.
+Ce concept est né dans le cadre du travail quotidien de l'association **Humanum Contactus** et de sa webradio **Radio Electrons Libres** (electronslibres.ch), une association à but non lucratif basée à Lugnorre, Suisse.
 
 Si ce système vous est utile, si vous l'implémentez, si vous vous en inspirez — pensez à faire un don à l'association. Pas une obligation. Pas une condition de la licence. Juste une pensée — celle que l'idée est née quelque part, dans un bureau avec une vue sur les montagnes du canton de Fribourg, et que cet endroit-là mérite d'exister.
 
-**Humanum Contactus — Radio Electrons Libre**
+**Humanum Contactus — Radio Electrons Libres**
 🌐 electronslibres.ch
 📍 Lugnorre, Suisse
 
