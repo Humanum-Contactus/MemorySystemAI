@@ -1,7 +1,9 @@
 # Installation et tests — prototype `memory-node`
 
 > Guide pour installer, lancer et tester un nœud Sensors&MemorySystemAI.  
-> Aucun secret n’est nécessaire pour les tests ; les jetons d’API ne sont jamais versionnés.
+> Aucun secret n’est nécessaire pour les tests ; les jetons d’API ne sont jamais versionnés.  
+> Présentation du prototype : [`prototypes/memory-node/README.md`](../prototypes/memory-node/README.md) ·
+> Tests : [`tests/`](../prototypes/memory-node/tests/README.md) · [Index docs](README.md)
 
 ## 1. Prérequis
 
@@ -132,9 +134,16 @@ from <IP_POSTE_DE_CONTROLE> to any port 8765`) et n’exposez jamais le nœud à
 3. Protocole contradictions : [`PROTOCOLE_TEST_CONTRADICTIONS.md`](PROTOCOLE_TEST_CONTRADICTIONS.md)
 4. Fusion des doublons (copie d’abord) : voir la
    [fiche de changement](changements/2026-10-25_detection-contradictions.md).
+5. Tests automatisés : [`prototypes/memory-node/tests/`](../prototypes/memory-node/tests/README.md).
 
 ## 8. Mise à jour et retour arrière
 
 Toujours : arrêter le service → sauvegarder → copier les fichiers → redémarrer →
 vérifier `/status` et `journalctl`. Chaque fiche de `docs/changements/` donne sa
 procédure de retour arrière.
+
+---
+
+Voir aussi : [README du prototype](../prototypes/memory-node/README.md) ·
+[protocole contradictions](PROTOCOLE_TEST_CONTRADICTIONS.md) ·
+[fiches de changement](changements/README.md) · [CHANGELOG](../CHANGELOG.md)

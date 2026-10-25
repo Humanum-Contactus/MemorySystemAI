@@ -47,6 +47,25 @@ python memory_cli.py stats
 python memory_cli.py check "sudo rm -rf /efi"
 ```
 
+### Continuer le journal
+
+Le journal du projet = les chroniques `docs/EVOLUTION_MEMORY_NODE_AAAA-MM.md`.
+Pour tout changement du prototype :
+
+1. **Nouvelle phase** dans la chronique du mois en cours, **lettre suivante**
+   (après T : U, V, …) : contexte, ce qui a été fait, résultat, retour arrière.
+   Nouveau mois → nouvelle chronique qui **reprend là où la précédente s’arrête**
+   (dernière phase, dernier état), avec liens *Précédent / Suivant* en tête et en fin
+   des deux fichiers. Une période sans trace se dit « non documentée » : on n’invente rien.
+2. **Nouvelle fiche** `docs/changements/AAAA-MM-JJ_sujet.md` : pourquoi, quoi,
+   comment tester, comment revenir en arrière ; l’ajouter à
+   [`docs/changements/README.md`](docs/changements/README.md).
+3. **Entrée CHANGELOG** sous `[Non publié]`, avec lien vers la phase et la fiche.
+4. **Tests** dans `prototypes/memory-node/tests/` ; les lister dans son `README.md`.
+5. **Liens** : relatifs, puis `python3 tools/check_links.py` doit afficher 0 lien cassé.
+6. Aucun secret ni donnée personnelle (IP, jetons, empreintes, visages, voix, proches) :
+   utiliser des exemples génériques (`<IP_DU_NOEUD>`).
+
 ---
 
 ## English
@@ -85,3 +104,7 @@ sensors, memory-first recall, LLM-as-tool, and human tutoring.
 3. Open a PR with: *what*, *why*, *how to test*.
 
 Thank you — merci.
+
+### Continuing the journal
+
+See the French section [« Continuer le journal »](#continuer-le-journal): new phase (next letter) in the current chronicle, a change sheet in `docs/changements/`, a CHANGELOG entry, tests, relative links checked with `python3 tools/check_links.py`.

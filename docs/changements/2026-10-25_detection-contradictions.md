@@ -1,5 +1,10 @@
 # Fiche de changement — détection des contradictions entre faits enseignés
 
+> Chronique : [phases M–S](../EVOLUTION_MEMORY_NODE_2026-10.md#chantier-doctobre-2026) ·
+> Protocole : [`PROTOCOLE_TEST_CONTRADICTIONS.md`](../PROTOCOLE_TEST_CONTRADICTIONS.md) ·
+> Tests : [`tests/`](../../prototypes/memory-node/tests/README.md) ·
+> [CHANGELOG](../../CHANGELOG.md) · [Toutes les fiches](README.md)
+
 | Champ | Valeur |
 |-------|--------|
 | Date | 25.10.2026 (déployé vers 01:40, heure de Zurich) |
@@ -97,3 +102,10 @@ Dans git : `git revert <commit>` du commit « contradictions ».
 - `GET /memories` ne montre pas les corrélations (lire l’index).
 - **Constaté en production** : `contradiction_ids` renvoyé même sans contradiction
   (correction en analyse, voir chronique octobre 2026, phase Q).
+
+---
+
+Voir aussi : [chronique octobre 2026](../EVOLUTION_MEMORY_NODE_2026-10.md) ·
+[protocole de test](../PROTOCOLE_TEST_CONTRADICTIONS.md) ·
+[tests automatisés](../../prototypes/memory-node/tests/README.md) ·
+[installation](../INSTALLATION.md) · [CHANGELOG](../../CHANGELOG.md)

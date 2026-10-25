@@ -104,6 +104,7 @@ python3 prototypes/memory-node/tests/test_contradictions.py   # 97 contrôles
 python3 -m pytest prototypes/memory-node/tests                # si pytest est installé
 ```
 
+Détail : [`tests/README.md`](tests/README.md).  
 Sur un nœud réel : [`docs/PROTOCOLE_TEST_CONTRADICTIONS.md`](../../docs/PROTOCOLE_TEST_CONTRADICTIONS.md).
 Installation complète : [`docs/INSTALLATION.md`](../../docs/INSTALLATION.md).
 

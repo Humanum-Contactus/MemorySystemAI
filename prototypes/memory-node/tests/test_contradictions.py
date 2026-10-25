@@ -4,6 +4,8 @@
 Exécution : python3 prototypes/memory-node/tests/test_contradictions.py
          ou : python3 -m pytest prototypes/memory-node/tests/
 Tout se passe dans un dossier temporaire ; le dépôt n'est pas modifié.
+Voir : docs/changements/2026-10-25_detection-contradictions.md
+       docs/PROTOCOLE_TEST_CONTRADICTIONS.md
 
 Rejoue le protocole cristal Vornex (bleu puis rouge) et les chemins à ne pas
 casser : identité, correction auditive, feedback.

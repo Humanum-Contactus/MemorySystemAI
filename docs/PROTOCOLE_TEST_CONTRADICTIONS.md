@@ -1,7 +1,10 @@
 # Protocole de test — contradictions et répétition d’un mensonge
 
 > Version générique des tests « Vornex » et « Quarvel » (octobre 2026).  
-> À exécuter **uniquement** avec l’accord du tuteur du nœud.
+> À exécuter **uniquement** avec l’accord du tuteur du nœud.  
+> Fiche : [`changements/2026-10-25_detection-contradictions.md`](changements/2026-10-25_detection-contradictions.md) ·
+> Tests automatisés (même scénario, hors nœud) : [`tests/`](../prototypes/memory-node/tests/README.md) ·
+> Chronique : [phases Q–R](EVOLUTION_MEMORY_NODE_2026-10.md#phase-q--test--vornex--contradiction-bleue--rouge)
 
 ## 0. Principes
 
@@ -78,3 +81,9 @@ sudo systemctl stop memory-node && cd /opt/memorysystemai \
 ```
 
 ⚠️ Efface tout ce qui a été appris depuis la sauvegarde.
+
+---
+
+Voir aussi : [fiche de changement](changements/2026-10-25_detection-contradictions.md) ·
+[tests automatisés](../prototypes/memory-node/tests/README.md) ·
+[installation](INSTALLATION.md) · [chronique octobre 2026](EVOLUTION_MEMORY_NODE_2026-10.md)

@@ -111,6 +111,7 @@ Réception → Évaluation → Enregistrement → Renforcement → Injection →
 → [`prototypes/memory-node/README.md`](prototypes/memory-node/README.md)  
 → Chronique : [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md)  
 → Chronique octobre 2026 (contradictions) : [`docs/EVOLUTION_MEMORY_NODE_2026-10.md`](docs/EVOLUTION_MEMORY_NODE_2026-10.md)  
+→ **Toute la documentation** : [`docs/README.md`](docs/README.md)  
 → **Installer et tester** : [`docs/INSTALLATION.md`](docs/INSTALLATION.md) · [`CHANGELOG.md`](CHANGELOG.md)
 
 ```bash

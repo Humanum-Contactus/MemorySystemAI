@@ -1,17 +1,24 @@
 # Journal des modifications (CHANGELOG)
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
-Dates au format JJ.MM.AAAA (heure de Zurich). Le récit détaillé est dans
-[`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md) et
-[`docs/EVOLUTION_MEMORY_NODE_2026-10.md`](docs/EVOLUTION_MEMORY_NODE_2026-10.md).
+Dates au format JJ.MM.AAAA (heure de Zurich). Le récit détaillé est dans les chroniques :
+
+| Chronique | Phases |
+|-----------|--------|
+| [`docs/EVOLUTION_MEMORY_NODE_2026-07.md`](docs/EVOLUTION_MEMORY_NODE_2026-07.md) | A–I |
+| [`docs/EVOLUTION_MEMORY_NODE_2026-10.md`](docs/EVOLUTION_MEMORY_NODE_2026-10.md) | J–T |
+
+Fiches de changement : [`docs/changements/`](docs/changements/) ·
+Règle pour continuer : [`CONTRIBUTING.md`](CONTRIBUTING.md#continuer-le-journal) ·
+Index : [`docs/README.md`](docs/README.md)
 
 ## [Non publié]
 
-### En cours (non déployé)
+### En cours (non déployé) — [phase T](docs/EVOLUTION_MEMORY_NODE_2026-10.md#phase-t--corrections-en-cours-danalyse-en-cours--non-déployé)
 - Limiter l’accumulation des souvenirs « Autonomie inhibée » créés par la boucle de fond (~226 en une journée).
 - Ne plus renvoyer `contradiction_ids` quand il n’y a pas de contradiction.
 
-### Ajouté
+### Ajouté — phases M–R, fiche [`2026-10-25_detection-contradictions`](docs/changements/2026-10-25_detection-contradictions.md)
 - `prototypes/memory-node/fact_conflict.py` : détection des contradictions entre faits enseignés (sujet / valeur, accord simple, préambules).
 - `prototypes/memory-node/dedup_taught_facts.py` : fusion manuelle des doublons exacts (dry-run par défaut, sauvegarde + archive avec `--apply`).
 - `prototypes/memory-node/tests/test_contradictions.py` : 97 contrôles automatisés (script ou pytest).
@@ -30,5 +37,28 @@ Dates au format JJ.MM.AAAA (heure de Zurich). Le récit détaillé est dans
 - 25.10.2026 ~01:44 : 6 groupes de doublons fusionnés (1044 → 1036 mémoires).
 
 ## [2026-07-21] — `e586d78`
-- Durcissement de l’autonomie du memory-node : bilan de source, rappel, état de préparation et critique gestuelle dans `memory_index`.
-- Prototype `memory-node` (phases A–I) : voir la chronique de juillet 2026.
+
+Chronique : [phases J–L](docs/EVOLUTION_MEMORY_NODE_2026-10.md#entre-les-deux-chroniques--daprès-git-log-21072026) (d’après `git log`).
+
+- `e586d78` — Autonomie durcie : normes vivantes, bilan de source, crible avant LLM, corroboration, maturité, critique des gestes, `hear_self`, boucle d’initiative de fond.
+- `74002c1` — Routes `/explore` et `/autonomy` documentées.
+- `fa25480` — Boîte à outils d’autonomie `autonomy.py`, `POST /explore`, `POST /autonomy`.
+- `7084cdb` — Le whitepaper devient le fondement de la documentation.
+- `de84c9f` — Bannière bilingue du document de nommage.
+
+## [2026-07-20 – 2026-07-21] — prototype `memory-node`
+
+Chronique : [phases A–I](docs/EVOLUTION_MEMORY_NODE_2026-07.md).
+
+- `2cbf065` — Documentation bilingue (FR source, miroirs EN).
+- `80f258c` — Évolution memory-node documentée : capteurs, identité, normes apprises.
+- `92843d9` — `CONTRIBUTING`, good first issues, modèles d’issues.
+- `56a6831`, `434eb97` — Prototype `memory-node` et documentation Sensors&MemorySystemAI.
+
+## [1.1] — 09.05.2026 — `310e761`
+
+- Implémentation Python : cœur `MemorySystem`, CLI, intégration OpenClaw, données d’amorçage.
+
+## [1.0] — 04.05.2026 — `ba8ff51`
+
+- MemorySystemAI : système nerveux artificiel (mémoire sensorielle, exposants émotionnels, inhibition apprise).
