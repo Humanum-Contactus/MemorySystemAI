@@ -92,7 +92,7 @@ UI_INDEX = UI_DIR / "index.html"
 
 OLLAMA_LOCAL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen2.5:1.5b-instruct")
-OLLAMA_FALLBACK = os.environ.get("OLLAMA_FALLBACK", "http://192.168.50.48:11434")
+OLLAMA_FALLBACK = os.environ.get("OLLAMA_FALLBACK", "http://127.0.0.1:11434")
 PUTER_AUTH_TOKEN = os.environ.get("PUTER_AUTH_TOKEN", "").strip()
 PUTER_MODEL = os.environ.get("PUTER_MODEL", "moonshotai/kimi-k2")
 PUTER_VISION_MODEL = os.environ.get("PUTER_VISION_MODEL", "moonshotai/kimi-k3")

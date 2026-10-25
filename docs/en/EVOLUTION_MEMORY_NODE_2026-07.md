@@ -1,7 +1,7 @@
 # Evolution July 2026 — `memory-node` prototype
 
 > **[FR (source) →](../EVOLUTION_MEMORY_NODE_2026-07.md)** · EN · [`LANGUES.md`](../LANGUES.md)  
-> ← **Previous:** *(none — first chronicle)* · **Next:** [Evolution October 2026 (phases J–W)](EVOLUTION_MEMORY_NODE_2026-10.md) · [Docs index](README.md) · [CHANGELOG](../../CHANGELOG.en.md)
+> ← **Previous:** *(none — first chronicle)* · **Next:** [Period 21.07 – 24.10.2026 (project paused)](EVOLUTION_MEMORY_NODE_2026-07-10.md) · [Docs index](README.md) · [CHANGELOG](../../CHANGELOG.en.md)
 
 **Concept author:** Vincent Vermeille (Humanum-Contactus)  
 **Status:** first embodied demonstrator — Sensors&MemorySystemAI in power  
@@ -140,4 +140,4 @@ the original idea (not a chatbot gadget).
 
 ---
 
-← **Previous:** *(none — first chronicle)* · **Next:** [Evolution October 2026 (phases J–W)](EVOLUTION_MEMORY_NODE_2026-10.md) · [Docs index](README.md) · [CHANGELOG](../../CHANGELOG.en.md)
+← **Previous:** *(none — first chronicle)* · **Next:** [Period 21.07 – 24.10.2026 (project paused)](EVOLUTION_MEMORY_NODE_2026-07-10.md) · [Docs index](README.md) · [CHANGELOG](../../CHANGELOG.en.md)

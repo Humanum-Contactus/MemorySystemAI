@@ -1,3 +1,5 @@
+# Generic systemd unit (English mirror of memory-node.service.generic.example).
+# Replace "memorysystemai" with a dedicated unprivileged account if you use another one.
 [Unit]
 Description=Sensors&MemorySystemAI / MemorySystemAI organism (blank slate + sensory tools)
 After=network-online.target
@@ -5,8 +7,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=admin
-Group=audio
+User=memorysystemai
+Group=memorysystemai
 SupplementaryGroups=video audio
 WorkingDirectory=/opt/memorysystemai
 Environment=PYTHONPATH=/opt/memorysystemai

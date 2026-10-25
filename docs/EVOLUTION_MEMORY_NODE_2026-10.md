@@ -1,7 +1,7 @@
 # Évolution octobre 2026 — prototype `memory-node`
 
 > **FR (source)** · **[English →](en/EVOLUTION_MEMORY_NODE_2026-10.md)** · [`LANGUES.md`](LANGUES.md)  
-> ← **Précédent :** [Évolution juillet 2026 (phases A–I)](EVOLUTION_MEMORY_NODE_2026-07.md) ·
+> ← **Précédent :** [Période 21.07 – 24.10.2026 (projet en pause)](EVOLUTION_MEMORY_NODE_2026-07-10.md) ·
 > **Suivant :** *(aucun pour l’instant)* · [Index docs](README.md) · [CHANGELOG](../CHANGELOG.md)
 
 **Auteur concept :** Vincent Vermeille (Humanum-Contactus)  
@@ -387,7 +387,7 @@ sudo systemctl stop memory-node && cd /opt/memorysystemai && tar xzf backups/inh
   4. **Patch A** : `autonomy.py` compte les occurrences (`occurrences` +
      `occurrence_dates` ISO avec fuseau) ; `memory_system.py` sérialise et relit ces
      deux champs (sinon `to_dict` / `from_dict` les effaçaient à chaque sauvegarde).
-  5. **Fusion avec occurrences** vers le survivant (M719), en reconstruisant le
+  5. **Fusion avec occurrences** vers le souvenir survivant de l’autonomie inhibée, en reconstruisant le
      compteur depuis l’archive du nettoyage v1 et les heures depuis le journal du nœud.
 - **Ce qu’on a constaté** :
   - Le nettoyage v1 a été appliqué à 23:36:26, **avant** l’ordre d’arrêt de Vincent,
@@ -422,7 +422,7 @@ sudo systemctl stop memory-node                                    # 23:40:03
 # commande exacte non consignée : création de backups/autonomie_occurrences_20261025T234003.tgz
 # commande exacte non consignée : application du patch A
 python3 fusion_autonomie_occurrences.py --index MemorySystemAI/memory_index.json \
-  --keep M719 --archive MemorySystemAI/autonomie-archive-20261025-233626.json --log <JOURNAL_DU_NOEUD>
+  --keep <ID_DU_SURVIVANT> --archive MemorySystemAI/autonomie-archive-20261025-233626.json --log <JOURNAL_DU_NOEUD>
 #   (dry-run puis --apply à 23:40:22 ; arguments exacts non consignés)
 sudo systemctl start memory-node                                   # 23:40:22
 ```
@@ -451,7 +451,7 @@ sudo systemctl stop memory-node && cd /opt/memorysystemai && tar xzf backups/aut
      `process_wav` et `label_pending_or_last` ;
   3. `organism.py` : half-duplex `SPEAKING` autour des lectures audio, garde de 0,5 s ;
      l’enregistrement attend au plus 100 s puis enregistre quand même ;
-  4. suppression de la fiche voix **VP002**, qui était la voix de synthèse elle-même.
+  4. suppression de la fausse fiche voix, qui était la voix de synthèse elle-même.
 - **Ce qu’on a constaté** : tests sur copie **20/20**, démonstration contradictions
   97 OK ; en production : service actif, 0 erreur, fiches existantes inchangées,
   question en attente inchangée. `hear_self` n’ayant pas tourné depuis, la
@@ -482,7 +482,7 @@ sudo systemctl stop memory-node && cd /opt/memorysystemai && tar xzf backups/voi
 | Reste à faire | État |
 |---------------|------|
 | Décider si le souvenir « Autonomie inhibée » doit rester au-dessus du seuil d’injection (≥ 7) | à trancher |
-| Couvrir `sensory_agent.py` par le half-duplex | à trancher |
+| Couvrir `sensory_agent.py` par le half-duplex | reporté (décision de Vincent : « pas maintenant ») |
 | Répondre aux questions Vornex en attente | Vincent |
 
 
@@ -571,7 +571,7 @@ Voix (phase W) : lecture TTS → SPEAKING levé → micro en attente (+0,5 s)
 | `prototypes/memory-node/organism.py` | Runtime ; branchements L, O, U, W | L, O, U, W |
 | `prototypes/memory-node/voice_memory.py` | Mémoire des voix ; ignore `tts_self_*` | W |
 | `memory_system.py` | Champs facultatifs `occurrences` / `occurrence_dates` | V |
-| `prototypes/memory-node/maintenance/` | Scripts manuels (fusion, suppression VP002) | V–W |
+| `prototypes/memory-node/maintenance/` | Scripts manuels (fusion, suppression de la fausse fiche voix) | V–W |
 | `prototypes/memory-node/tests/` | Tests automatisés (97 + 15 + 18 contrôles) | O, U–W |
 | `docs/changements/` | Fiches de changement | O, U–W |
 
@@ -587,6 +587,6 @@ d’arrêt (rien perdu : archive complète).
 
 ---
 
-← **Précédent :** [Évolution juillet 2026 (phases A–I)](EVOLUTION_MEMORY_NODE_2026-07.md) ·
+← **Précédent :** [Période 21.07 – 24.10.2026 (projet en pause)](EVOLUTION_MEMORY_NODE_2026-07-10.md) ·
 **Suivant :** *(aucun pour l’instant)* · [Index docs](README.md) · [CHANGELOG](../CHANGELOG.md) ·
 [Fiches de changement](changements/README.md)

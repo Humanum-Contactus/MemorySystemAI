@@ -15,7 +15,7 @@
 ## 1. Why
 
 The node listened to itself speaking (`hear_self`) and recorded its **own synthetic
-voice** as a person: false voice profile VP002. Its microphone could also record
+voice** as a person: false voice profile. Its microphone could also record
 while it was speaking.
 
 ## 2. What
@@ -23,9 +23,10 @@ while it was speaking.
 1. `hear_self` no longer calls `voice.process_wav`.
 2. `voice_memory.py` ignores any `tts_self_*` clip.
 3. `organism.py`: half-duplex `SPEAKING` + 0.5 s guard; wait capped at 100 s.
-4. Deletion of VP002 (`supprimer_vp002.py`, other profiles checked identical).
+4. Deletion of the false voice profile (`supprimer_vp002.py`, other profiles checked identical).
 
 Limit: `sensory_agent.py` (separate process) is not covered by `SPEAKING`.
+Extending the half-duplex to `sensory_agent.py` is **postponed by Vincent’s decision** (“not now”).
 
 ## 3. How to test
 

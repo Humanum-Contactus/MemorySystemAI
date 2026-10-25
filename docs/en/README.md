@@ -8,6 +8,7 @@
 | [`WHY_IT_MATTERS.md`](WHY_IT_MATTERS.md) | Research intent |
 | [`CONCEPT_FUNDAMENTAL.md`](CONCEPT_FUNDAMENTAL.md) | Concept overview (full depth in FR `01_`) |
 | [`EVOLUTION_MEMORY_NODE_2026-07.md`](EVOLUTION_MEMORY_NODE_2026-07.md) | Build chronicle, July 2026 (phases A–I) |
+| [`EVOLUTION_MEMORY_NODE_2026-07-10.md`](EVOLUTION_MEMORY_NODE_2026-07-10.md) | Period 21.07 – 24.10.2026: project paused |
 | [`EVOLUTION_MEMORY_NODE_2026-10.md`](EVOLUTION_MEMORY_NODE_2026-10.md) | Chronicle October 2026 (phases J–W) |
 | [`INSTALLATION.md`](INSTALLATION.md) | Install and test |
 | [`TEST_PROTOCOL_CONTRADICTIONS.md`](TEST_PROTOCOL_CONTRADICTIONS.md) | Contradiction test protocol |

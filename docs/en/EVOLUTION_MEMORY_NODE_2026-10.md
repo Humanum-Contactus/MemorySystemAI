@@ -1,7 +1,7 @@
 # Evolution October 2026 — `memory-node` prototype
 
 > **[FR (source) →](../EVOLUTION_MEMORY_NODE_2026-10.md)** · EN · [`LANGUES.md`](../LANGUES.md)  
-> ← **Previous:** [Evolution July 2026 (phases A–I)](EVOLUTION_MEMORY_NODE_2026-07.md) ·
+> ← **Previous:** [Period 21.07 – 24.10.2026 (project paused)](EVOLUTION_MEMORY_NODE_2026-07-10.md) ·
 > **Next:** *(none yet)* · [Docs index](README.md) · [CHANGELOG](../../CHANGELOG.en.md)
 
 **Concept author:** Vincent Vermeille (Humanum-Contactus)  
@@ -383,7 +383,7 @@ sudo systemctl stop memory-node && cd /opt/memorysystemai && tar xzf backups/inh
      `occurrence_dates`, ISO with time zone); `memory_system.py` serialises and
      reads back these two fields (otherwise `to_dict` / `from_dict` erased them at
      every save).
-  5. **Merge with occurrences** into the survivor (M719), rebuilding the counter
+  5. **Merge with occurrences** into the surviving “autonomy inhibited” memory, rebuilding the counter
      from the cleanup-v1 archive and the times from the node’s log.
 - **Observed**:
   - Cleanup v1 was applied at 23:36:26, **before** Vincent’s stop order, and it
@@ -418,7 +418,7 @@ sudo systemctl stop memory-node                                    # 23:40:03
 # commande exacte non consignée : création de backups/autonomie_occurrences_20261025T234003.tgz
 # commande exacte non consignée : application du patch A
 python3 fusion_autonomie_occurrences.py --index MemorySystemAI/memory_index.json \
-  --keep M719 --archive MemorySystemAI/autonomie-archive-20261025-233626.json --log <JOURNAL_DU_NOEUD>
+  --keep <ID_DU_SURVIVANT> --archive MemorySystemAI/autonomie-archive-20261025-233626.json --log <JOURNAL_DU_NOEUD>
 #   (dry-run puis --apply à 23:40:22 ; arguments exacts non consignés)
 sudo systemctl start memory-node                                   # 23:40:22
 ```
@@ -446,7 +446,7 @@ sudo systemctl stop memory-node && cd /opt/memorysystemai && tar xzf backups/aut
      `process_wav` and `label_pending_or_last`;
   3. `organism.py`: half-duplex `SPEAKING` around audio playback, 0.5 s guard;
      recording waits at most 100 s, then records anyway;
-  4. deletion of voice profile **VP002**, which was the synthetic voice itself.
+  4. deletion of the false voice profile, which was the synthetic voice itself.
 - **Observed**: tests on copy **20/20**, contradiction demo 97 OK; in production:
   service active, 0 errors, existing profiles unchanged, pending question
   unchanged. Since `hear_self` has not run since, fix 1 is **verified on the copy
@@ -477,7 +477,7 @@ sudo systemctl stop memory-node && cd /opt/memorysystemai && tar xzf backups/voi
 | Still to do | State |
 |-------------|-------|
 | Decide whether the "Autonomie inhibée" memory should stay above the injection threshold (≥ 7) | to decide |
-| Cover `sensory_agent.py` with the half-duplex | to decide |
+| Cover `sensory_agent.py` with the half-duplex | postponed (Vincent’s decision: “not now”) |
 | Answer the pending Vornex questions | Vincent |
 
 ---
@@ -565,7 +565,7 @@ Voice (phase W): TTS playback → SPEAKING raised → microphone waits (+0.5 s)
 | `prototypes/memory-node/organism.py` | Runtime; hooks L, O, U, W | L, O, U, W |
 | `prototypes/memory-node/voice_memory.py` | Voice memory; ignores `tts_self_*` | W |
 | `memory_system.py` | Optional fields `occurrences` / `occurrence_dates` | V |
-| `prototypes/memory-node/maintenance/` | Manual scripts (merge, VP002 deletion) | V–W |
+| `prototypes/memory-node/maintenance/` | Manual scripts (merge, false voice profile deletion) | V–W |
 | `prototypes/memory-node/tests/` | Automated tests (97 + 15 + 18 checks) | O, U–W |
 | `docs/changements/` | Change records (EN: `docs/en/changements/`) | O, U–W |
 
@@ -581,6 +581,6 @@ lost: full archive).
 
 ---
 
-← **Previous:** [Evolution July 2026 (phases A–I)](EVOLUTION_MEMORY_NODE_2026-07.md) ·
+← **Previous:** [Period 21.07 – 24.10.2026 (project paused)](EVOLUTION_MEMORY_NODE_2026-07-10.md) ·
 **Next:** *(none yet)* · [Docs index](README.md) · [CHANGELOG](../../CHANGELOG.en.md) ·
 [Change records](changements/README.md)

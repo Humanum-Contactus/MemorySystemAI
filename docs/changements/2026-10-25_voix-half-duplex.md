@@ -15,7 +15,7 @@
 ## 1. Pourquoi
 
 Le nœud s’écoutait parler (`hear_self`) et enregistrait sa **propre voix de
-synthèse** comme une personne : fausse fiche voix VP002. Son micro pouvait aussi
+synthèse** comme une personne : fausse fiche voix. Son micro pouvait aussi
 enregistrer pendant qu’il parlait.
 
 ## 2. Quoi
@@ -23,9 +23,10 @@ enregistrer pendant qu’il parlait.
 1. `hear_self` n’appelle plus `voice.process_wav`.
 2. `voice_memory.py` ignore tout clip `tts_self_*`.
 3. `organism.py` : half-duplex `SPEAKING` + garde 0,5 s ; attente bornée à 100 s.
-4. Suppression de VP002 (`supprimer_vp002.py`, autres fiches vérifiées identiques).
+4. Suppression de la fausse fiche voix (`supprimer_vp002.py`, autres fiches vérifiées identiques).
 
 Limite : `sensory_agent.py` (processus séparé) n’est pas couvert par `SPEAKING`.
+L’extension du half-duplex à `sensory_agent.py` est **reportée par décision de Vincent** (« pas maintenant »).
 
 ## 3. Comment tester
 

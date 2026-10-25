@@ -11,6 +11,7 @@
 | [`LANGUES.md`](LANGUES.md) | Politique FR / EN |
 | [`POURQUOI_CA_COMPTE.md`](POURQUOI_CA_COMPTE.md) | Sens de la recherche |
 | [`EVOLUTION_MEMORY_NODE_2026-07.md`](EVOLUTION_MEMORY_NODE_2026-07.md) | Chronique prototype (phases A–I) → suite : 2026-10 |
+| [`EVOLUTION_MEMORY_NODE_2026-07-10.md`](EVOLUTION_MEMORY_NODE_2026-07-10.md) | Période 21.07 – 24.10.2026 : projet en pause |
 | [`EVOLUTION_MEMORY_NODE_2026-10.md`](EVOLUTION_MEMORY_NODE_2026-10.md) | Chronique prototype (phases J–Q, contradictions) |
 | [`INSTALLATION.md`](INSTALLATION.md) | Installer, configurer, lancer, tester |
 | [`PROTOCOLE_TEST_CONTRADICTIONS.md`](PROTOCOLE_TEST_CONTRADICTIONS.md) | Protocole de test contradictions |
@@ -42,6 +43,7 @@
 ## Chroniques (journal du projet)
 
 Ordre de lecture : [juillet 2026 — phases A–I](EVOLUTION_MEMORY_NODE_2026-07.md) →
+[21.07 – 24.10.2026 — projet en pause](EVOLUTION_MEMORY_NODE_2026-07-10.md) →
 [octobre 2026 — phases J–W](EVOLUTION_MEMORY_NODE_2026-10.md).
 Chaque changement : une phase dans la chronique, une [fiche](changements/README.md),
 une entrée [CHANGELOG](../CHANGELOG.md). Règle : [`CONTRIBUTING.md`](../CONTRIBUTING.md#continuer-le-journal).
